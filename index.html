@@ -1,9 +1,302 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Chapter Approved 2025</title>
+
+  <!-- PWA bits (you already uploaded these files) -->
+  <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+  <style>
+    :root{
+      --bg:#0e0f12;             /* neutral dark background */
+      --panel:#12141a;
+      --elev:#181b22;
+      --blue:#1e3a78;           /* Macragge-ish */
+      --blue-grad:#274690;
+      --gold:#d7c178;           /* Ultramarines 2nd trim */
+      --text:#e9edf3;
+      --muted:#9aa3b2;
+      --chip:#2a2f3a;
+      --accent:#24448f;
+      --danger:#b14a4a;
+      --ok:#3d8d5d;
+      --card:#141820;
+      --cardEdge:#0b0d11;
+      --radius:16px;
+      --shadow: 0 10px 24px rgba(0,0,0,.35), 0 2px 6px rgba(0,0,0,.25);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+    .wrap{max-width:980px;margin:0 auto;padding:28px 16px 60px;}
+
+    /* Header */
+    .hero{
+      background: linear-gradient(180deg,var(--blue),var(--blue-grad));
+      border-bottom:2px solid rgba(215,193,120,.35);
+      box-shadow: var(--shadow);
+      border-radius: 0 0 var(--radius) var(--radius);
+      padding: 18px 16px 20px;
+      position: sticky; top:0; z-index:5;
+    }
+    .title{
+      display:flex;align-items:center;gap:14px;margin:0 0 12px 0;
+      font-weight:800; letter-spacing:.2px; font-size:22px;
+      color:white;
+    }
+    .badge{background:rgba(215,193,120,.18);color:#fff;
+      border:1px solid rgba(215,193,120,.5);padding:4px 10px;border-radius:999px;font-size:12px}
+    .bar{display:grid;grid-template-columns:1fr auto auto;gap:10px}
+    .input{
+      background:#0f1218;border:1px solid #1f2531;border-radius:12px;
+      padding:12px 12px;font-size:15px;color:#fff;outline:none;
+    }
+    .select{
+      background:#0f1218;border:1px solid #1f2531;border-radius:12px;
+      color:#fff;padding:12px 12px;font-size:15px;
+    }
+    .tabs{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+    .tab{
+      background:var(--chip);color:#d9e2f1;border:1px solid #2f3746;cursor:pointer;
+      padding:8px 12px;border-radius:999px;font-weight:600;font-size:13px;
+    }
+    .tab.active{background:var(--gold);color:#101217;border-color:transparent}
+
+    /* Cards */
+    .grid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:18px}
+    @media(min-width:680px){.grid{grid-template-columns:1fr 1fr}}
+    .card{
+      background:linear-gradient(180deg,#191e28,#12161e);
+      border:1px solid #242a37;border-radius:18px;box-shadow:var(--shadow);
+      overflow:hidden; cursor:pointer; position:relative;
+    }
+    .cardHead{
+      background:#2a0f0f; /* keep red header for now; swap later to blue if desired */
+      color:#fff;padding:12px 14px;border-bottom:1px dashed rgba(255,255,255,.25);
+      font-weight:800;letter-spacing:.3px
+    }
+    .cardBody{padding:12px 14px;color:var(--muted);font-size:14px;min-height:56px}
+    .chipSaved{
+      position:absolute; right:10px; top:10px;
+      background:rgba(61,141,93,.18); border:1px solid rgba(61,141,93,.55);
+      color:#bdf4cf; font-size:11px; padding:4px 8px; border-radius:999px
+    }
+
+    /* Modal */
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:12px;z-index:20}
+    .modal.show{display:flex}
+    .panel{
+      width:min(720px,96vw);background:linear-gradient(180deg,var(--panel),var(--elev));
+      border:1px solid #2a3242;border-radius:18px;box-shadow:var(--shadow);padding:16px 16px 14px
+    }
+    .panelHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+    .panelTitle{font-weight:900;font-size:18px;color:#fff}
+    .btns{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{
+      border-radius:12px;border:1px solid #2b3241;background:#12161e;color:#dde4f1;
+      padding:10px 12px;font-weight:700;font-size:14px;cursor:pointer
+    }
+    .btn.gold{background:var(--gold);color:#141616;border:0}
+    .btn.danger{border-color:#4a2626;background:#1a0f10;color:#f3c9c9}
+    .txt{
+      width:100%;min-height:260px;background:#0f1218;color:#eff3fb;border:1px solid #263042;
+      border-radius:12px;padding:12px;font-size:15px;line-height:1.4;resize:vertical
+    }
+
+    .footer{margin-top:22px;color:#7e889a;font-size:12px;text-align:center}
+  </style>
 </head>
 <body>
-  Placeholder
+  <div class="hero">
+    <div class="wrap">
+      <div class="title">
+        <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(180deg,#1e3a78,#274690);border:1px solid rgba(215,193,120,.55);display:flex;align-items:center;justify-content:center;font-weight:900;">40K</div>
+        Chapter Approved 2025
+        <span class="badge">Offline-capable</span>
+      </div>
+
+      <div class="bar">
+        <input id="search" class="input" placeholder="Search titles…" />
+        <select id="jump" class="select"></select>
+        <div class="btns">
+          <button class="tab active" data-tab="secondary">Secondary Missions</button>
+          <button class="tab" data-tab="primary">Primary Missions</button>
+          <button class="tab" data-tab="terrain">Terrain Layouts</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div id="grid" class="grid"></div>
+    <div class="footer">Private table reference. Text & imagery © Games Workshop. No affiliation.</div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="modal" role="dialog" aria-modal="true">
+    <div class="panel">
+      <div class="panelHead">
+        <div class="panelTitle" id="modalTitle">Title</div>
+        <div class="btns">
+          <button id="exportBtn" class="btn">Export text</button>
+          <label class="btn">
+            Import text<input type="file" id="importFile" accept="application/json" style="display:none">
+          </label>
+          <button id="deleteBtn" class="btn danger">Clear text</button>
+          <button id="saveBtn" class="btn gold">Save</button>
+          <button id="closeBtn" class="btn">Close</button>
+        </div>
+      </div>
+      <textarea id="modalTxt" class="txt" placeholder="Paste the exact wording here…"></textarea>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // ------- data files (already in your /data folder) -------
+  const SOURCES = {
+    primary:  "data/primary.json",
+    terrain:  "data/terrain.json",
+    secondary:"data/secondary.json"
+  };
+
+  // ------- state -------
+  let currentTab = "secondary";
+  let items = []; // {title,text}
+  const grid = document.getElementById('grid');
+  const search = document.getElementById('search');
+  const jump   = document.getElementById('jump');
+  const modal  = document.getElementById('modal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalTxt   = document.getElementById('modalTxt');
+
+  const keyFor = (tab,title)=>`ca2025:text:${tab}:${title}`;
+
+  // ------- UI: tabs -------
+  document.querySelectorAll('.tab').forEach(btn=>{
+    btn.addEventListener('click', async () => {
+      document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTab = btn.dataset.tab;
+      search.value = "";
+      await loadAndRender();
+    });
+  });
+
+  // ------- load data -------
+  async function loadAndRender(){
+    try{
+      const res = await fetch(SOURCES[currentTab], {cache:"no-cache"});
+      const data = await res.json();
+      items = (data.items||[]).slice().sort((a,b)=>a.title.localeCompare(b.title));
+      buildJump(items);
+      render(items);
+    }catch(e){
+      grid.innerHTML = `<div style="opacity:.8">Failed to load ${currentTab}.json</div>`;
+    }
+  }
+
+  // ------- render grid -------
+  function render(list){
+    const q = search.value.trim().toLowerCase();
+    const filtered = q ? list.filter(x=>x.title.toLowerCase().includes(q)) : list;
+    grid.innerHTML = filtered.map(x=>{
+      const saved = localStorage.getItem(keyFor(currentTab, x.title));
+      return `
+        <div class="card" data-title="${escapeHtml(x.title)}">
+          <div class="cardHead">${escapeHtml(x.title)}</div>
+          <div class="cardBody">${saved ? "Saved text present" : "Tap to paste wording"}</div>
+          ${saved ? `<div class="chipSaved">Saved</div>` : ""}
+        </div>`;
+    }).join('') || `<div style="opacity:.8">No results.</div>`;
+
+    grid.querySelectorAll('.card').forEach(card=>{
+      card.addEventListener('click',()=>openEditor(card.dataset.title));
+    });
+  }
+
+  // ------- A–Z jump -------
+  function buildJump(list){
+    const letters = [...new Set(list.map(x=>x.title[0].toUpperCase()))].sort();
+    jump.innerHTML = `<option value="">A–Z jump</option>`+
+      letters.map(l=>`<option value="${l}">${l}</option>`).join('');
+  }
+  jump.addEventListener('change', ()=>{
+    const letter = jump.value;
+    if(!letter) return;
+    const el = [...grid.querySelectorAll('.card')].find(c=>c.dataset.title.startsWith(letter));
+    if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+  });
+
+  // ------- search -------
+  search.addEventListener('input', ()=>render(items));
+
+  // ------- modal editor -------
+  function openEditor(title){
+    modalTitle.textContent = title;
+    const saved = localStorage.getItem(keyFor(currentTab,title));
+    modalTxt.value = saved || "";
+    modal.classList.add('show');
+    modalTxt.focus();
+  }
+  document.getElementById('closeBtn').onclick = ()=> modal.classList.remove('show');
+  document.getElementById('deleteBtn').onclick = ()=>{
+    localStorage.removeItem(keyFor(currentTab, modalTitle.textContent));
+    modalTxt.value="";
+    modal.classList.remove('show');
+    render(items);
+  };
+  document.getElementById('saveBtn').onclick = ()=>{
+    localStorage.setItem(keyFor(currentTab, modalTitle.textContent), modalTxt.value);
+    modal.classList.remove('show');
+    render(items);
+  };
+
+  // ------- export / import for sharing local text -------
+  document.getElementById('exportBtn').onclick = ()=>{
+    const dump = {};
+    items.forEach(it=>{
+      const k = keyFor(currentTab, it.title);
+      const v = localStorage.getItem(k);
+      if(v) dump[it.title]=v;
+    });
+    const blob = new Blob([JSON.stringify({tab:currentTab, entries:dump},null,2)], {type:"application/json"});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `ca2025-${currentTab}-text.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+  document.getElementById('importFile').addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const text = await file.text();
+    try{
+      const obj = JSON.parse(text);
+      if(obj && obj.entries){
+        Object.entries(obj.entries).forEach(([title,body])=>{
+          localStorage.setItem(keyFor(currentTab,title), body);
+        });
+        alert("Imported.");
+        render(items);
+      }
+    }catch(err){ alert("Invalid file."); }
+    e.target.value = "";
+  });
+
+  // ------- helpers -------
+  function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+
+  // Register service worker if present (for offline)
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+  }
+
+  // Go!
+  loadAndRender();
+})();
+</script>
 </body>
 </html>
