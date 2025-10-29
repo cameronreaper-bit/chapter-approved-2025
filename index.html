@@ -33,7 +33,7 @@
       border-bottom:2px solid rgba(215,193,120,.35);
       box-shadow:var(--shadow);
       border-radius:0 0 var(--radius) var(--radius);
-      padding:18px 16px 20px;
+      padding:18px 16px 20px;           /* desktop size */
       position:sticky; top:0; z-index:5;
       overflow:hidden; max-width:100vw;
     }
@@ -41,7 +41,7 @@
       font-weight:800;letter-spacing:.2px;font-size:22px;color:#fff}
     .badge{background:rgba(215,193,120,.18);color:#fff;border:1px solid rgba(215,193,120,.5);
       padding:4px 10px;border-radius:999px;font-size:12px}
-    .bar{display:grid;grid-template-columns:1fr auto auto;gap:10px;max-width:100%}
+    .bar{display:grid;grid-template-columns:1fr auto;gap:10px;max-width:100%}
     .input,.select{background:#0f1218;border:1px solid #1f2531;border-radius:12px;
       padding:12px 12px;font-size:15px;color:#fff;outline:none;min-width:0}
     .tabs{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
@@ -55,7 +55,7 @@
     .card{background:linear-gradient(180deg,#191e28,#12161e);border:1px solid #242a37;
       border-radius:18px;box-shadow:var(--shadow);overflow:hidden;cursor:pointer;position:relative}
     .cardHead{
-      background:linear-gradient(180deg,#1e3a78,#274690); /* Macragge blue */
+      background:linear-gradient(180deg,#1e3a78,#274690);
       color:#fff;padding:12px 14px;border-bottom:1px dashed rgba(255,255,255,.25);
       font-weight:800;letter-spacing:.3px;border-top:1px solid rgba(215,193,120,.45)
     }
@@ -104,25 +104,35 @@
     .md{background:#0c1017;border:1px solid #263042;border-radius:12px;padding:12px;margin-top:8px}
     .md h1,.md h2{margin:.2rem 0 .5rem 0; color:var(--gold)}
     .md h1{font-size:1.2rem} .md h2{font-size:1.05rem}
-    .md p{
-      margin:0.9rem 0;
-      color:#fff;
-      white-space:pre-wrap;
-    }
+    .md p{margin:0.9rem 0;color:#fff;white-space:pre-wrap}
     .md ul{margin:.35rem 0 .35rem 1.1rem}
     .md li{margin:.2rem 0;color:#e8edf8}
     .md em{font-style:italic} .md strong{font-weight:800;color:#fff}
     .hint{color:#9fb0c9;font-size:12px;margin-top:6px}
     .footer{opacity:.8;font-size:12px;margin-top:14px}
 
-    /* -------- Mobile-only trim: ~25% shorter header, keep 3-column layout -------- */
+    /* -------- MOBILE: 25% shorter header + rock-solid layout (search | jump on row 1, tabs on row 2) -------- */
     @media (max-width:600px){
-      .hero{padding:12px 12px 12px;}              /* shorter overall */
+      .hero{padding:12px 12px 12px;}         /* shorter header */
       .title{font-size:20px;margin:0 0 6px;gap:10px}
       .badge{font-size:11px;padding:3px 8px}
-      .bar{grid-template-columns:1fr auto auto;gap:8px;} /* keep tabs on same row */
-      .input,.select{padding:10px 11px;font-size:16px}
-      .tabs{gap:7px;margin-top:6px}
+
+      /* Named grid areas prevent squashing */
+      .bar{
+        display:grid;
+        grid-template-columns:1fr auto;
+        grid-template-areas:
+          "search jump"
+          "tabs   tabs";
+        gap:8px;
+        align-items:center;
+      }
+      #search.input{grid-area:search}
+      #jump.select{grid-area:jump}
+      .tabs{grid-area:tabs;margin-top:4px;gap:7px}
+
+      /* Slightly tighter controls but not tall */
+      .input,.select{padding:10px 12px;font-size:16px}
       .tab{padding:7px 10px;font-size:13px}
     }
   </style>
@@ -139,7 +149,7 @@
       <div class="bar">
         <input id="search" class="input" placeholder="Search titles…" />
         <select id="jump" class="select"></select>
-        <div class="btns">
+        <div class="tabs">
           <button class="tab active" data-tab="secondary">Secondary Missions</button>
           <button class="tab" data-tab="primary">Primary Missions</button>
           <button class="tab" data-tab="terrain">Terrain Layouts</button>
@@ -171,10 +181,7 @@
       </div>
 
       <div class="panelBody">
-        <!-- Live Markdown preview -->
         <div id="mdPreview" class="md" style="display:none"></div>
-
-        <!-- Editor -->
         <textarea id="modalTxt" class="txt" placeholder="Use markdown:
 ## Heading
 - Bullet
@@ -186,7 +193,6 @@
 
 <script>
 (() => {
-  // JSON sources (leave as /data/ unless you moved the files)
   const SOURCES = { primary:"data/primary.json", terrain:"data/terrain.json", secondary:"data/secondary.json" };
 
   let currentTab = "secondary";
@@ -202,7 +208,6 @@
 
   const keyFor = (tab,title)=>`ca2025:text:${tab}:${title}`;
 
-  // Tabs
   document.querySelectorAll('.tab').forEach(btn=>{
     btn.addEventListener('click', async () => {
       document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
@@ -213,7 +218,6 @@
     });
   });
 
-  // Load + render
   async function loadAndRender(){
     try{
       const res = await fetch(SOURCES[currentTab], {cache:"no-cache"});
@@ -246,7 +250,6 @@
     });
   }
 
-  // A–Z jump
   function buildJump(list){
     const letters = [...new Set(list.map(x=>x.title[0].toUpperCase()))].sort();
     jump.innerHTML = `<option value="">A–Z jump</option>`+
@@ -260,7 +263,6 @@
   });
   search.addEventListener('input', ()=>render(items));
 
-  // Modal editor
   function openEditor(title){
     modalTitle.textContent = title;
     const saved = localStorage.getItem(keyFor(currentTab,title));
@@ -283,7 +285,6 @@
     render(items);
   };
 
-  // Preview toggle (markdown with headings anywhere + paragraph logic)
   previewBtn.addEventListener('click', ()=>{
     if(mdPreview.style.display === "none"){
       mdPreview.innerHTML = renderMarkdown(modalTxt.value);
@@ -293,7 +294,6 @@
     }
   });
 
-  // Export / Import
   document.getElementById('exportBtn').onclick = ()=>{
     const dump = {};
     items.forEach(it=>{
@@ -323,70 +323,37 @@
     e.target.value = "";
   });
 
-  // ---------- Markdown helpers ----------
   function escapeHtml(s){ return String(s||"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;","»":"&raquo;","<":"&lt;","\"":"&quot;","'":"&#39;"}[c])); }
   function normalize(s){ return String(s||"").replace(/\r\n/g,"\n").replace(/\r/g,"\n"); }
 
   function renderMarkdown(src){
     const text = normalize(src);
     const lines = text.split("\n");
+    let html = [], inList = false, para = [];
 
-    let html = [];
-    let inList = false;
-    let para = [];
-
-    const flushPara = () => {
-      if (para.length){
-        html.push(`<p>${para.map(l => inlineMarkdown(l)).join('<br>')}</p>`);
-        para = [];
-      }
-    };
-    const flushList = () => {
-      if (inList){ html.push('</ul>'); inList = false; }
-    };
+    const flushPara = () => { if (para.length){ html.push(`<p>${para.map(l => inlineMarkdown(l)).join('<br>')}</p>`); para = []; } };
+    const flushList = () => { if (inList){ html.push('</ul>'); inList = false; } };
 
     for (let i = 0; i < lines.length; i++){
       const line = lines[i];
-
-      if (/^\s*$/.test(line)){
-        flushList(); flushPara(); continue;
-      }
-
-      if (/^#{1,2}\s+/.test(line)){
-        flushList(); flushPara();
-        const lvl = line.startsWith('##') ? 'h2' : 'h1';
-        html.push(`<${lvl}>${inlineMarkdown(line.replace(/^#{1,2}\s+/, ''))}</${lvl}>`);
-        continue;
-      }
-
-      if (/^\s*[-*]\s+/.test(line)){
-        flushPara();
-        if (!inList){ html.push('<ul>'); inList = true; }
-        html.push(`<li>${inlineMarkdown(line.replace(/^\s*[-*]\s+/, ''))}</li>`);
-        continue;
-      }
-
+      if (/^\s*$/.test(line)){ flushList(); flushPara(); continue; }
+      if (/^#{1,2}\s+/.test(line)){ flushList(); flushPara(); const lvl = line.startsWith('##') ? 'h2' : 'h1'; html.push(`<${lvl}>${inlineMarkdown(line.replace(/^#{1,2}\s+/, ''))}</${lvl}>`); continue; }
+      if (/^\s*[-*]\s+/.test(line)){ flushPara(); if (!inList){ html.push('<ul>'); inList = true; } html.push(`<li>${inlineMarkdown(line.replace(/^\s*[-*]\s+/, ''))}</li>`); continue; }
       para.push(line);
     }
-
     flushList(); flushPara();
     return html.join('\n');
   }
-
   function inlineMarkdown(s){
-    s = String(s||"")
-      .replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+    s = String(s||"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
     s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
     s = s.replace(/\*(.+?)\*/g, "<em>$1</em>");
     return s;
   }
 
-  // Service worker (offline)
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('service-worker.js').catch(()=>{});
   }
-
-  // Go
   loadAndRender();
 })();
 </script>
