@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <!-- add viewport-fit=cover so safe-area env() works on iOS/Android -->
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Chapter Approved 2025</title>
 
   <!-- PWA + iOS icon -->
@@ -34,8 +33,12 @@
     .badge{background:rgba(215,193,120,.18);color:#fff;border:1px solid rgba(215,193,120,.5);
       padding:4px 10px;border-radius:999px;font-size:12px}
     .bar{display:grid;grid-template-columns:1fr auto auto;gap:10px}
-    .input,.select{background:#0f1218;border:1px solid #1f2531;border-radius:12px;
-      padding:12px 12px;font-size:15px;color:#fff;outline:none}
+    .input,.select{
+      background:#0f1218;border:1px solid #1f2531;border-radius:12px;
+      padding:12px 12px;font-size:16px;color:#fff;outline:none;
+      line-height:1.2; /* keeps height tidy on iOS */
+      -webkit-appearance:none;appearance:none;
+    }
     .tabs{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
     .tab{background:var(--chip);color:#d9e2f1;border:1px solid #2f3746;cursor:pointer;
       padding:8px 12px;border-radius:999px;font-weight:600;font-size:13px}
@@ -64,15 +67,15 @@
     .modal.show{display:flex}
     .panel{
       width:min(820px,96vw);
-      max-height:92vh;                /* prevents offscreen */
-      overflow:auto;                  /* scroll inside */
+      max-height:92vh;                /* <= prevents offscreen */
+      overflow:auto;                  /* <= scroll inside */
       background:linear-gradient(180deg,var(--panel),var(--elev));
       border:1px solid #2a3242;border-radius:18px;box-shadow:var(--shadow);
       padding:0;                      /* we'll pad inner sections */
       display:block;
     }
     .panelHead{
-      position:sticky; top:0; z-index:1; /* stays visible */
+      position:sticky; top:0; z-index:1; /* <= stays visible */
       background:linear-gradient(180deg,var(--panel),#151922);
       border-bottom:1px solid #2a3242;
       display:flex;align-items:center;justify-content:space-between;gap:8px;
@@ -107,18 +110,39 @@
     .hint{color:#9fb0c9;font-size:12px;margin-top:6px}
     .footer{opacity:.8;font-size:12px;margin-top:14px}
 
-    /* ---------- Safe-area patch: ONLY addition below ---------- */
+    /* ---------- Safe-area support ---------- */
     @supports (padding: env(safe-area-inset-top)) {
       :root{
         --safe-top: env(safe-area-inset-top, 0px);
         --safe-bottom: env(safe-area-inset-bottom, 0px);
       }
-      /* keep header clear of the notch */
       .hero{ padding-top: calc(18px + var(--safe-top)); }
-      /* keep bottom content clear of gesture bar */
       .wrap{ padding-bottom: calc(60px + var(--safe-bottom)); }
     }
-    /* ---------- End of safe-area patch ---------- */
+
+    /* ---------- MOBILE TUNE: only phones; desktop unchanged ---------- */
+    @media (max-width: 640px){
+      /* Keep inputs on one row and move tabs to a new row so they never get cut off */
+      .bar{
+        grid-template-columns: 1fr 44% auto; /* search | jump | (tabs placeholder) */
+        align-items: center;
+      }
+      /* Force the tabs to span full width on the next row */
+      .btns{
+        grid-column: 1 / -1;
+        margin-top: 6px;
+      }
+      /* Trim input heights without triggering iOS zoom (font-size stays 16px) */
+      .input,.select{
+        padding:8px 12px;     /* was 12px 12px */
+        min-height:38px;
+        line-height:1.15;
+        border-radius:10px;
+      }
+      /* Slightly tighter hero and card headers to fit more on screen */
+      .hero{ padding-bottom:16px; }
+      .cardHead{ padding:10px 12px; }
+    }
   </style>
 </head>
 <body>
