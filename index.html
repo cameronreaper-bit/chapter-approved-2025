@@ -14,7 +14,7 @@
       --bg:#0e0f12; --panel:#12141a; --elev:#181b22;
       --blue:#1e3a78; --blue-grad:#274690;
       --gold:#d7c178; --text:#e9edf3; --muted:#9aa3b2;
-      --chip:#2a2f3a; --card:#141820; --radius:16px;
+      --chip:#2a2f3a; --radius:16px;
       --shadow: 0 10px 24px rgba(0,0,0,.35), 0 2px 6px rgba(0,0,0,.25);
     }
     *{box-sizing:border-box}
@@ -44,15 +44,11 @@
     @media(min-width:680px){.grid{grid-template-columns:1fr 1fr}}
     .card{background:linear-gradient(180deg,#191e28,#12161e);border:1px solid #242a37;
       border-radius:18px;box-shadow:var(--shadow);overflow:hidden;cursor:pointer;position:relative}
-   .cardHead{
-  background:linear-gradient(180deg,#1e3a78,#274690); /* Macragge Blue gradient */
-  color:#fff;
-  padding:12px 14px;
-  border-bottom:1px dashed rgba(255,255,255,.25);
-  font-weight:800;
-  letter-spacing:.3px;
-  border-top:1px solid rgba(215,193,120,.45); /* subtle gold accent */
-}
+    .cardHead{
+      background:linear-gradient(180deg,#1e3a78,#274690); /* Macragge blue */
+      color:#fff;padding:12px 14px;border-bottom:1px dashed rgba(255,255,255,.25);
+      font-weight:800;letter-spacing:.3px;border-top:1px solid rgba(215,193,120,.45)
+    }
     .cardBody{padding:12px 14px;color:var(--muted);font-size:14px;min-height:56px}
     .chipSaved{position:absolute;right:10px;top:10px;background:rgba(61,141,93,.18);
       border:1px solid rgba(61,141,93,.55);color:#bdf4cf;font-size:11px;padding:4px 8px;border-radius:999px}
@@ -70,13 +66,17 @@
     .btn.gold{background:var(--gold);color:#141616;border:0}
     .btn.danger{border-color:#4a2626;background:#1a0f10;color:#f3c9c9}
     .txt{width:100%;min-height:220px;background:#0f1218;color:#eff3fb;border:1px solid #263042;
-      border-radius:12px;padding:12px;font-size:15px;line-height:1.4;resize:vertical;margin-top:10px}
+      border-radius:12px;padding:12px;font-size:15px;line-height:1.45;resize:vertical;margin-top:10px}
 
-    /* Markdown preview styling */
-    .md{background:#0c1017;border:1px solid #263042;border-radius:12px;padding:12px;margin-top:4px}
-    .md h1,.md h2{margin:.2rem 0 .4rem 0; color:var(--gold)}
+    /* Markdown preview */
+    .md{background:#0c1017;border:1px solid #263042;border-radius:12px;padding:12px;margin-top:8px}
+    .md h1,.md h2{margin:.2rem 0 .5rem 0; color:var(--gold)}
     .md h1{font-size:1.2rem} .md h2{font-size:1.05rem}
-    .md p{margin:.35rem 0;color:#fff}
+    .md p{
+      margin:0.9rem 0;       /* paragraph gap */
+      color:#fff;
+      white-space:pre-wrap;   /* keep single-Enter line breaks */
+    }
     .md ul{margin:.35rem 0 .35rem 1.1rem}
     .md li{margin:.2rem 0;color:#e8edf8}
     .md em{font-style:italic} .md strong{font-weight:800;color:#fff}
@@ -134,7 +134,7 @@
 ## Heading
 - Bullet
 **Bold** and *italics*"></textarea>
-      <div class="hint">Headings starting with <code>##</code> render gold; lists starting with <code>- </code> become bullets; <code>**bold**</code> and <code>*italics*</code> work.</div>
+      <div class="hint">Single Enter = line break · Blank line = new paragraph · <code>##</code> heading is gold · <code>- </code> bullets · <code>**bold**</code>, <code>*italics*</code>.</div>
     </div>
   </div>
 
@@ -155,6 +155,7 @@
 
   const keyFor = (tab,title)=>`ca2025:text:${tab}:${title}`;
 
+  // Tabs
   document.querySelectorAll('.tab').forEach(btn=>{
     btn.addEventListener('click', async () => {
       document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
@@ -165,6 +166,7 @@
     });
   });
 
+  // Load + render
   async function loadAndRender(){
     try{
       const res = await fetch(SOURCES[currentTab], {cache:"no-cache"});
@@ -182,11 +184,11 @@
     const filtered = q ? list.filter(x=>x.title.toLowerCase().includes(q)) : list;
     grid.innerHTML = filtered.map(x=>{
       const saved = localStorage.getItem(keyFor(currentTab, x.title));
-      const preview = saved ? sanitize(saved).split(/\n/)[0].slice(0,120) : "Tap to paste wording";
+      const firstLine = (saved||"").split(/\r?\n/)[0] || "Tap to paste wording";
       return `
         <div class="card" data-title="${escapeHtml(x.title)}">
           <div class="cardHead">${escapeHtml(x.title)}</div>
-          <div class="cardBody">${escapeHtml(preview)}</div>
+          <div class="cardBody">${escapeHtml(firstLine)}</div>
           ${saved ? `<div class="chipSaved">Saved</div>` : ""}
         </div>`;
     }).join('') || `<div style="opacity:.8">No results.</div>`;
@@ -196,6 +198,7 @@
     });
   }
 
+  // A–Z jump
   function buildJump(list){
     const letters = [...new Set(list.map(x=>x.title[0].toUpperCase()))].sort();
     jump.innerHTML = `<option value="">A–Z jump</option>`+
@@ -209,6 +212,7 @@
   });
   search.addEventListener('input', ()=>render(items));
 
+  // Modal editor
   function openEditor(title){
     modalTitle.textContent = title;
     const saved = localStorage.getItem(keyFor(currentTab,title));
@@ -231,7 +235,7 @@
     render(items);
   };
 
-  // Preview toggle (markdown render)
+  // Preview toggle (markdown with line breaks + paragraphs)
   previewBtn.addEventListener('click', ()=>{
     if(mdPreview.style.display === "none"){
       mdPreview.innerHTML = renderMarkdown(modalTxt.value);
@@ -271,47 +275,47 @@
     e.target.value = "";
   });
 
-  // Helpers: escape & simple markdown renderer (headings, bullets, bold, italics)
+  // ---------- Markdown helpers ----------
   function escapeHtml(s){ return String(s||"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
-  function sanitize(s){ return s.replace(/\r\n/g,"\n").replace(/\r/g,"\n"); }
+  function normalize(s){ return String(s||"").replace(/\r\n/g,"\n").replace(/\r/g,"\n"); }
 
+  // Headings (#/##), bullets (-), bold ** **, italics * *
+  // Single newline -> <br> inside paragraphs; blank line -> new paragraph
   function renderMarkdown(src){
-    // Escape HTML first
-    let text = escapeHtml(sanitize(src));
+    const text = normalize(src);
+    const blocks = text.split(/\n{2,}/); // blank line => new paragraph block
+    let html = [];
+    blocks.forEach(block=>{
+      const lines = block.split("\n");
 
-    // Split into lines for structure
-    const lines = text.split("\n");
-    let out = [];
-    let inList = false;
-
-    const flushList = ()=>{ if(inList){ out.push("</ul>"); inList=false; } };
-
-    for(let i=0;i<lines.length;i++){
-      let line = lines[i];
-
-      // Headings
-      if(/^##\s+/.test(line)){ flushList(); out.push(`<h2>${line.replace(/^##\s+/, "")}</h2>`); continue; }
-      if(/^#\s+/.test(line)){  flushList(); out.push(`<h1>${line.replace(/^#\s+/, "")}</h1>`);  continue; }
-
-      // Bullets
-      if(/^\s*[-*]\s+/.test(line)){
-        if(!inList){ out.push("<ul>"); inList=true; }
-        let li = line.replace(/^\s*[-*]\s+/, "");
-        li = inlineMarkdown(li);
-        out.push(`<li>${li}</li>`);
-        continue;
-      } else {
-        flushList();
+      // Heading-only block
+      if(lines.length===1 && /^#{1,2}\s+/.test(lines[0])){
+        const lvl = lines[0].startsWith('##') ? 'h2' : 'h1';
+        html.push(`<${lvl}>${inlineMarkdown(lines[0].replace(/^#{1,2}\s+/, ""))}</${lvl}>`);
+        return;
       }
-      
-    flushList();
-    return out.join("\n");
+
+      // List block
+      if(lines.every(l=>/^\s*[-*]\s+/.test(l))){
+        html.push("<ul>");
+        lines.forEach(l=>{
+          const li = l.replace(/^\s*[-*]\s+/, "");
+          html.push(`<li>${inlineMarkdown(li)}</li>`);
+        });
+        html.push("</ul>");
+        return;
+      }
+
+      // Paragraph block (keep single newlines as <br>)
+      const para = lines.map(l=>inlineMarkdown(l)).join("<br>");
+      html.push(`<p>${para}</p>`);
+    });
+    return html.join("\n");
   }
 
   function inlineMarkdown(s){
-    // bold **text**
+    s = escapeHtml(s);
     s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-    // italics *text*
     s = s.replace(/\*(.+?)\*/g, "<em>$1</em>");
     return s;
   }
@@ -327,3 +331,4 @@
 </script>
 </body>
 </html>
+
