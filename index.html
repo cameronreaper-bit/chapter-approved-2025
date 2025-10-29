@@ -33,7 +33,7 @@
       border-bottom:2px solid rgba(215,193,120,.35);
       box-shadow:var(--shadow);
       border-radius:0 0 var(--radius) var(--radius);
-      padding:18px 16px 20px;            /* desktop/default */
+      padding:18px 16px 20px;
       position:sticky; top:0; z-index:5;
       overflow:hidden; max-width:100vw;
     }
@@ -73,15 +73,14 @@
     .modal.show{display:flex}
     .panel{
       width:min(820px,96vw);
-      max-height:92vh;                /* <= prevents offscreen */
-      overflow:auto;                  /* <= scroll inside */
+      max-height:92vh;
+      overflow:auto;
       background:linear-gradient(180deg,var(--panel),var(--elev));
       border:1px solid #2a3242;border-radius:18px;box-shadow:var(--shadow);
-      padding:0;                      /* we'll pad inner sections */
-      display:block;
+      padding:0; display:block;
     }
     .panelHead{
-      position:sticky; top:0; z-index:1; /* <= stays visible */
+      position:sticky; top:0; z-index:1;
       background:linear-gradient(180deg,var(--panel),#151922);
       border-bottom:1px solid #2a3242;
       display:flex;align-items:center;justify-content:space-between;gap:8px;
@@ -94,7 +93,7 @@
     .btn.gold{background:var(--gold);color:#141616;border:0}
     .btn.danger{border-color:#4a2626;background:#1a0f10;color:#f3c9c9}
 
-    .panelBody{padding:16px}         /* content area under sticky head */
+    .panelBody{padding:16px}
 
     .txt{
       width:100%;min-height:220px;background:#0f1218;color:#eff3fb;border:1px solid #263042;
@@ -106,9 +105,9 @@
     .md h1,.md h2{margin:.2rem 0 .5rem 0; color:var(--gold)}
     .md h1{font-size:1.2rem} .md h2{font-size:1.05rem}
     .md p{
-      margin:0.9rem 0;       /* paragraph gap */
+      margin:0.9rem 0;
       color:#fff;
-      white-space:pre-wrap;   /* keep single-Enter line breaks */
+      white-space:pre-wrap;
     }
     .md ul{margin:.35rem 0 .35rem 1.1rem}
     .md li{margin:.2rem 0;color:#e8edf8}
@@ -116,15 +115,15 @@
     .hint{color:#9fb0c9;font-size:12px;margin-top:6px}
     .footer{opacity:.8;font-size:12px;margin-top:14px}
 
-    /* ---- Mobile header 25% shorter (ONLY change) ---- */
+    /* -------- Mobile-only trim: ~25% shorter header, keep 3-column layout -------- */
     @media (max-width:600px){
-      .hero{padding:9px 12px 10px;} /* was 18px 16px 20px */
-      .title{font-size:19px;margin:0 0 6px;gap:10px}
+      .hero{padding:12px 12px 12px;}              /* shorter overall */
+      .title{font-size:20px;margin:0 0 6px;gap:10px}
       .badge{font-size:11px;padding:3px 8px}
-      .bar{grid-template-columns:1fr 1fr;gap:8px;}
-      .input,.select{padding:9px 11px;font-size:16px;}
-      .tabs{gap:7px;margin-top:7px}
-      .tab{padding:7px 10px;font-size:13.5px}
+      .bar{grid-template-columns:1fr auto auto;gap:8px;} /* keep tabs on same row */
+      .input,.select{padding:10px 11px;font-size:16px}
+      .tabs{gap:7px;margin-top:6px}
+      .tab{padding:7px 10px;font-size:13px}
     }
   </style>
 </head>
@@ -219,7 +218,6 @@
     try{
       const res = await fetch(SOURCES[currentTab], {cache:"no-cache"});
       const data = await res.json();
-      // Expect data.items = [{title, text?}] OR flat array of {title, text}
       const raw = Array.isArray(data) ? data : (data.items||[]);
       items = raw.slice().sort((a,b)=>a.title.localeCompare(b.title));
       buildJump(items);
@@ -329,8 +327,6 @@
   function escapeHtml(s){ return String(s||"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;","»":"&raquo;","<":"&lt;","\"":"&quot;","'":"&#39;"}[c])); }
   function normalize(s){ return String(s||"").replace(/\r\n/g,"\n").replace(/\r/g,"\n"); }
 
-  // Headings (#/##) anywhere, bullets (-), bold ** **, italics * *
-  // Single newline -> <br>; blank line -> new paragraph
   function renderMarkdown(src){
     const text = normalize(src);
     const lines = text.split("\n");
@@ -352,23 +348,17 @@
     for (let i = 0; i < lines.length; i++){
       const line = lines[i];
 
-      // blank line = paragraph break
       if (/^\s*$/.test(line)){
-        flushList();
-        flushPara();
-        continue;
+        flushList(); flushPara(); continue;
       }
 
-      // headings anywhere (need a space after # or ##)
       if (/^#{1,2}\s+/.test(line)){
-        flushList();
-        flushPara();
+        flushList(); flushPara();
         const lvl = line.startsWith('##') ? 'h2' : 'h1';
         html.push(`<${lvl}>${inlineMarkdown(line.replace(/^#{1,2}\s+/, ''))}</${lvl}>`);
         continue;
       }
 
-      // bullet lists
       if (/^\s*[-*]\s+/.test(line)){
         flushPara();
         if (!inList){ html.push('<ul>'); inList = true; }
@@ -376,12 +366,10 @@
         continue;
       }
 
-      // otherwise part of a paragraph
       para.push(line);
     }
 
-    flushList();
-    flushPara();
+    flushList(); flushPara();
     return html.join('\n');
   }
 
