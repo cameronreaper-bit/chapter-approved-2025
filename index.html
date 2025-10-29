@@ -22,23 +22,27 @@
     html,body{
       margin:0;height:100%;background:var(--bg);color:var(--text);
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      overflow-x:hidden; /* PHONE FIX: no horizontal scroll */
+      /* stop horizontal jiggle on mobile */
+      overflow-x:hidden;
     }
     .wrap{max-width:980px;margin:0 auto;padding:28px 16px 60px}
 
     /* Header */
-    .hero{background:linear-gradient(180deg,var(--blue),var(--blue-grad));
+    .hero{
+      background:linear-gradient(180deg,var(--blue),var(--blue-grad));
       border-bottom:2px solid rgba(215,193,120,.35); box-shadow:var(--shadow);
       border-radius:0 0 var(--radius) var(--radius); padding:18px 16px 20px;
-      position:sticky; top:0; z-index:5}
+      position:sticky; top:0; z-index:5;
+      /* clip shadows/rounded edges so they can't cause side scroll */
+      overflow:hidden;
+    }
     .title{display:flex;align-items:center;gap:14px;margin:0 0 12px 0;
-      font-weight:800;letter-spacing:.2px;font-size:22px;color:#fff;flex-wrap:wrap} /* PHONE FIX: wrap title line if needed */
+      font-weight:800;letter-spacing:.2px;font-size:22px;color:#fff}
     .badge{background:rgba(215,193,120,.18);color:#fff;border:1px solid rgba(215,193,120,.5);
       padding:4px 10px;border-radius:999px;font-size:12px}
     .bar{display:grid;grid-template-columns:1fr auto auto;gap:10px}
     .input,.select{background:#0f1218;border:1px solid #1f2531;border-radius:12px;
-      padding:12px 12px;font-size:15px;color:#fff;outline:none;min-width:0} /* PHONE FIX: allow shrinking */
-    .select{width:180px} /* desktop keeps its look */
+      padding:12px 12px;font-size:15px;color:#fff;outline:none;width:100%}
     .tabs{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
     .tab{background:var(--chip);color:#d9e2f1;border:1px solid #2f3746;cursor:pointer;
       padding:8px 12px;border-radius:999px;font-weight:600;font-size:13px}
@@ -67,18 +71,17 @@
     .modal.show{display:flex}
     .panel{
       width:min(820px,96vw);
-      max-height:92vh;                /* <= prevents offscreen */
-      overflow:auto;                  /* <= scroll inside */
+      max-height:92vh;
+      overflow:auto;
       background:linear-gradient(180deg,var(--panel),var(--elev));
       border:1px solid #2a3242;border-radius:18px;box-shadow:var(--shadow);
-      padding:0;                      /* we'll pad inner sections */
-      display:block;
+      padding:0;display:block;
     }
     .panelHead{
-      position:sticky; top:0; z-index:1; /* <= stays visible */
+      position:sticky; top:0; z-index:1;
       background:linear-gradient(180deg,var(--panel),#151922);
       border-bottom:1px solid #2a3242;
-      display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
+      display:flex;align-items:center;justify-content:space-between;gap:8px;
       padding:14px 16px;
     }
     .panelTitle{font-weight:900;font-size:18px;color:#fff}
@@ -87,8 +90,7 @@
       padding:10px 12px;font-weight:700;font-size:14px;cursor:pointer}
     .btn.gold{background:var(--gold);color:#141616;border:0}
     .btn.danger{border-color:#4a2626;background:#1a0f10;color:#f3c9c9}
-
-    .panelBody{padding:16px}         /* content area under sticky head */
+    .panelBody{padding:16px}
 
     .txt{
       width:100%;min-height:220px;background:#0f1218;color:#eff3fb;border:1px solid #263042;
@@ -100,9 +102,9 @@
     .md h1,.md h2{margin:.2rem 0 .5rem 0; color:var(--gold)}
     .md h1{font-size:1.2rem} .md h2{font-size:1.05rem}
     .md p{
-      margin:0.9rem 0;       /* paragraph gap */
+      margin:0.9rem 0;
       color:#fff;
-      white-space:pre-wrap;   /* keep single-Enter line breaks */
+      white-space:pre-wrap;
     }
     .md ul{margin:.35rem 0 .35rem 1.1rem}
     .md li{margin:.2rem 0;color:#e8edf8}
@@ -110,32 +112,27 @@
     .hint{color:#9fb0c9;font-size:12px;margin-top:6px}
     .footer{opacity:.8;font-size:12px;margin-top:14px}
 
-    /* =================== PHONE-ONLY LAYOUT TWEAKS =================== */
-    @media (max-width: 600px){
-      /* Safe-area padding for iOS notch/edges */
-      .hero{padding-left: max(16px, env(safe-area-inset-left));
-            padding-right:max(16px, env(safe-area-inset-right));}
-      .wrap{padding-left:max(16px, env(safe-area-inset-left));
-            padding-right:max(16px, env(safe-area-inset-right));}
-
-      /* Keep controls inside viewport, no sideways scroll */
+    /* ===== Mobile tweaks: compact sticky header & no sideways scroll ===== */
+    @media (max-width:600px){
+      .wrap{padding:18px 12px 48px}
+      .hero{
+        padding:12px 12px 14px;
+        border-radius:0 0 12px 12px;
+      }
+      .title{font-size:20px;margin:0 0 8px}
+      .badge{font-size:11px;padding:3px 8px}
       .bar{
-        grid-template-columns: 1fr 44vw;  /* search + A–Z */
-        align-items:center;
+        grid-template-columns:1fr 1fr; /* search | A–Z */
+        gap:8px;
       }
-      .select{width:100%; max-width:44vw; font-size:15px; padding:10px 12px;}
-      .input{font-size:15px; padding:10px 12px;}
-
-      /* Tabs on their own full-width row, scrollable if truly needed */
-      .tabs{
-        grid-column:1 / -1;
-        overflow-x:auto;
-        -webkit-overflow-scrolling:touch;
-        padding-bottom:6px;
+      .btns{grid-column:1 / -1;}      /* tabs row spans full width */
+      .input,.select{
+        padding:10px 12px;            /* less tall controls */
+        font-size:16px;
       }
-      .tabs::-webkit-scrollbar{display:none}
+      .tabs{gap:8px;margin-top:8px}
+      .tab{padding:8px 12px;font-size:14px}
     }
-    /* ================================================================= */
   </style>
 </head>
 <body>
@@ -150,7 +147,7 @@
       <div class="bar">
         <input id="search" class="input" placeholder="Search titles…" />
         <select id="jump" class="select"></select>
-        <div class="btns tabs">
+        <div class="btns">
           <button class="tab active" data-tab="secondary">Secondary Missions</button>
           <button class="tab" data-tab="primary">Primary Missions</button>
           <button class="tab" data-tab="terrain">Terrain Layouts</button>
@@ -229,7 +226,6 @@
     try{
       const res = await fetch(SOURCES[currentTab], {cache:"no-cache"});
       const data = await res.json();
-      // Expect data.items = [{title, text?}] OR flat array of {title, text}
       const raw = Array.isArray(data) ? data : (data.items||[]);
       items = raw.slice().sort((a,b)=>a.title.localeCompare(b.title));
       buildJump(items);
@@ -362,14 +358,12 @@
     for (let i = 0; i < lines.length; i++){
       const line = lines[i];
 
-      // blank line = paragraph break
       if (/^\s*$/.test(line)){
         flushList();
         flushPara();
         continue;
       }
 
-      // headings anywhere (need a space after # or ##)
       if (/^#{1,2}\s+/.test(line)){
         flushList();
         flushPara();
@@ -378,7 +372,6 @@
         continue;
       }
 
-      // bullet lists
       if (/^\s*[-*]\s+/.test(line)){
         flushPara();
         if (!inList){ html.push('<ul>'); inList = true; }
@@ -386,7 +379,6 @@
         continue;
       }
 
-      // otherwise part of a paragraph
       para.push(line);
     }
 
