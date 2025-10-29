@@ -303,11 +303,7 @@
       } else {
         flushList();
       }
-
-      // Paragraphs (skip empty lines)
-      if(line.trim()===""){ out.push("<p></p>"); continue; }
-      out.push(`<p>${inlineMarkdown(line)}</p>`);
-    }
+      
     flushList();
     return out.join("\n");
   }
