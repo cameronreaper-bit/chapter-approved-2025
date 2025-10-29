@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Chapter Approved 2025</title>
 
-  <!-- PWA + iOS icon -->
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="icon-512.png">
@@ -26,11 +25,12 @@
     }
     .wrap{max-width:980px;margin:0 auto;padding:28px 16px 60px}
 
-    /* Header */
     .hero{
       background:linear-gradient(180deg,var(--blue),var(--blue-grad));
-      border-bottom:2px solid rgba(215,193,120,.35);box-shadow:var(--shadow);
-      border-radius:0 0 var(--radius) var(--radius);padding:18px 16px 20px;
+      border-bottom:2px solid rgba(215,193,120,.35);
+      box-shadow:var(--shadow);
+      border-radius:0 0 var(--radius) var(--radius);
+      padding:18px 16px 20px;
       position:sticky;top:0;z-index:5
     }
     .title{display:flex;align-items:center;gap:14px;margin:0 0 12px 0;
@@ -39,13 +39,12 @@
       padding:4px 10px;border-radius:999px;font-size:12px}
     .bar{display:grid;grid-template-columns:1fr auto auto;gap:10px}
     .input,.select{background:#0f1218;border:1px solid #1f2531;border-radius:12px;
-      padding:12px 12px;font-size:15px;color:#fff;outline:none}
+      padding:12px;font-size:15px;color:#fff;outline:none}
     .tabs{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
     .tab{background:var(--chip);color:#d9e2f1;border:1px solid #2f3746;cursor:pointer;
       padding:8px 12px;border-radius:999px;font-weight:600;font-size:13px}
     .tab.active{background:var(--gold);color:#101217;border-color:transparent}
 
-    /* Cards */
     .grid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:18px}
     @media(min-width:680px){.grid{grid-template-columns:1fr 1fr}}
     .card{background:linear-gradient(180deg,#191e28,#12161e);border:1px solid #242a37;
@@ -59,7 +58,6 @@
     .chipSaved{position:absolute;right:10px;top:10px;background:rgba(61,141,93,.18);
       border:1px solid rgba(61,141,93,.55);color:#bdf4cf;font-size:11px;padding:4px 8px;border-radius:999px}
 
-    /* Modal */
     .modal{
       position:fixed;inset:0;background:rgba(0,0,0,.5);
       display:none;align-items:center;justify-content:center;
@@ -88,13 +86,11 @@
     .btn.gold{background:var(--gold);color:#141616;border:0}
     .btn.danger{border-color:#4a2626;background:#1a0f10;color:#f3c9c9}
     .panelBody{padding:16px}
-
     .txt{
       width:100%;min-height:220px;background:#0f1218;color:#eff3fb;border:1px solid #263042;
       border-radius:12px;padding:12px;font-size:15px;line-height:1.45;resize:vertical;margin-top:10px
     }
 
-    /* Markdown preview styling */
     .md{background:#0c1017;border:1px solid #263042;border-radius:12px;padding:12px;margin-top:8px}
     .md h1,.md h2{margin:.2rem 0 .5rem 0;color:var(--gold)}
     .md h1{font-size:1.2rem}.md h2{font-size:1.05rem}
@@ -132,7 +128,6 @@
     <div class="footer">Private table reference. Text & imagery © Games Workshop. No affiliation.</div>
   </div>
 
-  <!-- Modal -->
   <div id="modal" class="modal" role="dialog" aria-modal="true">
     <div class="panel">
       <div class="panelHead">
@@ -162,7 +157,7 @@
 
 <script>
 (() => {
-  const SOURCES = {primary:"data/primary.json",terrain:"data/terrain.json",secondary:"data/secondary.json"};
+  const SOURCES={primary:"data/primary.json",terrain:"data/terrain.json",secondary:"data/secondary.json"};
   let currentTab="secondary";let items=[];
   const grid=document.getElementById('grid'),search=document.getElementById('search'),jump=document.getElementById('jump'),modal=document.getElementById('modal'),modalTitle=document.getElementById('modalTitle'),modalTxt=document.getElementById('modalTxt'),mdPreview=document.getElementById('mdPreview'),previewBtn=document.getElementById('previewBtn');
   const keyFor=(tab,title)=>`ca2025:text:${tab}:${title}`;
@@ -225,48 +220,31 @@
     }else{mdPreview.style.display="none";}
   });
 
-  document.getElementById('exportBtn').onclick=()=>{
-    const dump={};
-    items.forEach(it=>{const k=keyFor(currentTab,it.title);const v=localStorage.getItem(k);if(v)dump[it.title]=v;});
-    const blob=new Blob([JSON.stringify({tab:currentTab,entries:dump},null,2)],{type:"application/json"});
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`ca2025-${currentTab}-text.json`;a.click();URL.revokeObjectURL(a.href);
-  };
-  document.getElementById('importFile').addEventListener('change',async e=>{
-    const file=e.target.files[0];if(!file)return;
-    try{
-      const obj=JSON.parse(await file.text());
-      if(obj&&obj.entries){Object.entries(obj.entries).forEach(([title,body])=>{localStorage.setItem(keyFor(currentTab,title),String(body||""));});alert("Imported.");render(items);}
-    }catch(err){alert("Invalid file.");}
-    e.target.value="";
-  });
-
   function escapeHtml(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));}
   function normalize(s){return String(s||"").replace(/\r\n/g,"\n").replace(/\r/g,"\n");}
 
-  // --- Inline markdown (bold + italics) ---
+  // ---- INLINE MARKDOWN (safe fix for italics + bold) ----
   function inlineMarkdown(s){
     s=String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+    // Bold first
     s=s.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>");
-    s=s.replace(/(^|[^*])\*(?!\s)(.+?)(?!\s)\*(?!\*)/g,'$1<em>$2</em>');
+    // Italics (non-greedy, supports multi-line)
+    s=s.replace(/(^|[^*])\*(?!\s)([\s\S]+?)(?!\s)\*(?!\*)/g,'$1<em>$2</em>');
     return s;
   }
 
-  // --- Markdown renderer: headings, lists, paragraphs ----
   function renderMarkdown(src){
     const text=normalize(src);
     const lines=text.split("\n");
     let html=[];let inList=false;let para=[];
     const flushPara=()=>{
       if(para.length){
-        // JOIN the whole paragraph, run inlineMarkdown once across it
-        const joined = para.join("\n");
-        const rendered = inlineMarkdown(joined).replace(/\n/g,"<br>");
-        html.push(`<p>${rendered}</p>`);
-        para=[];
+        const joined=para.join("\n");
+        const rendered=inlineMarkdown(joined).replace(/\n/g,"<br>");
+        html.push(`<p>${rendered}</p>`);para=[];
       }
     };
     const flushList=()=>{if(inList){html.push('</ul>');inList=false;}};
-
     for(let i=0;i<lines.length;i++){
       const line=lines[i];
       if(/^\s*$/.test(line)){flushList();flushPara();continue;}
@@ -277,7 +255,7 @@
     flushList();flushPara();return html.join('\n');
   }
 
-  if('serviceWorker'in navigator){navigator.serviceWorker.register('service-worker.js').catch(()=>{});}
+  if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js').catch(()=>{});}
   loadAndRender();
 })();
 </script>
