@@ -19,8 +19,11 @@
       --shadow: 0 10px 24px rgba(0,0,0,.35), 0 2px 6px rgba(0,0,0,.25);
     }
     *{box-sizing:border-box}
-    html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    html,body{
+      margin:0;height:100%;background:var(--bg);color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      overflow-x:hidden; /* PHONE FIX: no horizontal scroll */
+    }
     .wrap{max-width:980px;margin:0 auto;padding:28px 16px 60px}
 
     /* Header */
@@ -29,16 +32,13 @@
       border-radius:0 0 var(--radius) var(--radius); padding:18px 16px 20px;
       position:sticky; top:0; z-index:5}
     .title{display:flex;align-items:center;gap:14px;margin:0 0 12px 0;
-      font-weight:800;letter-spacing:.2px;font-size:22px;color:#fff}
+      font-weight:800;letter-spacing:.2px;font-size:22px;color:#fff;flex-wrap:wrap} /* PHONE FIX: wrap title line if needed */
     .badge{background:rgba(215,193,120,.18);color:#fff;border:1px solid rgba(215,193,120,.5);
       padding:4px 10px;border-radius:999px;font-size:12px}
     .bar{display:grid;grid-template-columns:1fr auto auto;gap:10px}
-    .input,.select{
-      background:#0f1218;border:1px solid #1f2531;border-radius:12px;
-      padding:12px 12px;font-size:16px;color:#fff;outline:none;
-      line-height:1.2; /* keeps height tidy on iOS */
-      -webkit-appearance:none;appearance:none;
-    }
+    .input,.select{background:#0f1218;border:1px solid #1f2531;border-radius:12px;
+      padding:12px 12px;font-size:15px;color:#fff;outline:none;min-width:0} /* PHONE FIX: allow shrinking */
+    .select{width:180px} /* desktop keeps its look */
     .tabs{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
     .tab{background:var(--chip);color:#d9e2f1;border:1px solid #2f3746;cursor:pointer;
       padding:8px 12px;border-radius:999px;font-weight:600;font-size:13px}
@@ -78,7 +78,7 @@
       position:sticky; top:0; z-index:1; /* <= stays visible */
       background:linear-gradient(180deg,var(--panel),#151922);
       border-bottom:1px solid #2a3242;
-      display:flex;align-items:center;justify-content:space-between;gap:8px;
+      display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
       padding:14px 16px;
     }
     .panelTitle{font-weight:900;font-size:18px;color:#fff}
@@ -110,39 +110,32 @@
     .hint{color:#9fb0c9;font-size:12px;margin-top:6px}
     .footer{opacity:.8;font-size:12px;margin-top:14px}
 
-    /* ---------- Safe-area support ---------- */
-    @supports (padding: env(safe-area-inset-top)) {
-      :root{
-        --safe-top: env(safe-area-inset-top, 0px);
-        --safe-bottom: env(safe-area-inset-bottom, 0px);
-      }
-      .hero{ padding-top: calc(18px + var(--safe-top)); }
-      .wrap{ padding-bottom: calc(60px + var(--safe-bottom)); }
-    }
+    /* =================== PHONE-ONLY LAYOUT TWEAKS =================== */
+    @media (max-width: 600px){
+      /* Safe-area padding for iOS notch/edges */
+      .hero{padding-left: max(16px, env(safe-area-inset-left));
+            padding-right:max(16px, env(safe-area-inset-right));}
+      .wrap{padding-left:max(16px, env(safe-area-inset-left));
+            padding-right:max(16px, env(safe-area-inset-right));}
 
-    /* ---------- MOBILE TUNE: only phones; desktop unchanged ---------- */
-    @media (max-width: 640px){
-      /* Keep inputs on one row and move tabs to a new row so they never get cut off */
+      /* Keep controls inside viewport, no sideways scroll */
       .bar{
-        grid-template-columns: 1fr 44% auto; /* search | jump | (tabs placeholder) */
-        align-items: center;
+        grid-template-columns: 1fr 44vw;  /* search + A–Z */
+        align-items:center;
       }
-      /* Force the tabs to span full width on the next row */
-      .btns{
-        grid-column: 1 / -1;
-        margin-top: 6px;
+      .select{width:100%; max-width:44vw; font-size:15px; padding:10px 12px;}
+      .input{font-size:15px; padding:10px 12px;}
+
+      /* Tabs on their own full-width row, scrollable if truly needed */
+      .tabs{
+        grid-column:1 / -1;
+        overflow-x:auto;
+        -webkit-overflow-scrolling:touch;
+        padding-bottom:6px;
       }
-      /* Trim input heights without triggering iOS zoom (font-size stays 16px) */
-      .input,.select{
-        padding:8px 12px;     /* was 12px 12px */
-        min-height:38px;
-        line-height:1.15;
-        border-radius:10px;
-      }
-      /* Slightly tighter hero and card headers to fit more on screen */
-      .hero{ padding-bottom:16px; }
-      .cardHead{ padding:10px 12px; }
+      .tabs::-webkit-scrollbar{display:none}
     }
+    /* ================================================================= */
   </style>
 </head>
 <body>
@@ -157,7 +150,7 @@
       <div class="bar">
         <input id="search" class="input" placeholder="Search titles…" />
         <select id="jump" class="select"></select>
-        <div class="btns">
+        <div class="btns tabs">
           <button class="tab active" data-tab="secondary">Secondary Missions</button>
           <button class="tab" data-tab="primary">Primary Missions</button>
           <button class="tab" data-tab="terrain">Terrain Layouts</button>
