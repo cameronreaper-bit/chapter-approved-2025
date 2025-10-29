@@ -55,19 +55,41 @@
       border:1px solid rgba(61,141,93,.55);color:#bdf4cf;font-size:11px;padding:4px 8px;border-radius:999px}
 
     /* Modal */
-    .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:12px;z-index:20}
+    .modal{
+      position:fixed;inset:0;background:rgba(0,0,0,.5);
+      display:none;align-items:center;justify-content:center;
+      padding:clamp(8px,2vh,16px);z-index:20
+    }
     .modal.show{display:flex}
-    .panel{width:min(820px,96vw);background:linear-gradient(180deg,var(--panel),var(--elev));
-      border:1px solid #2a3242;border-radius:18px;box-shadow:var(--shadow);padding:16px 16px 14px}
-    .panelHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+    .panel{
+      width:min(820px,96vw);
+      max-height:92vh;                /* <= prevents offscreen */
+      overflow:auto;                  /* <= scroll inside */
+      background:linear-gradient(180deg,var(--panel),var(--elev));
+      border:1px solid #2a3242;border-radius:18px;box-shadow:var(--shadow);
+      padding:0;                      /* we'll pad inner sections */
+      display:block;
+    }
+    .panelHead{
+      position:sticky; top:0; z-index:1; /* <= stays visible */
+      background:linear-gradient(180deg,var(--panel),#151922);
+      border-bottom:1px solid #2a3242;
+      display:flex;align-items:center;justify-content:space-between;gap:8px;
+      padding:14px 16px;
+    }
     .panelTitle{font-weight:900;font-size:18px;color:#fff}
     .btns{display:flex;gap:8px;flex-wrap:wrap}
     .btn{border-radius:12px;border:1px solid #2b3241;background:#12161e;color:#dde4f1;
       padding:10px 12px;font-weight:700;font-size:14px;cursor:pointer}
     .btn.gold{background:var(--gold);color:#141616;border:0}
     .btn.danger{border-color:#4a2626;background:#1a0f10;color:#f3c9c9}
-    .txt{width:100%;min-height:220px;background:#0f1218;color:#eff3fb;border:1px solid #263042;
-      border-radius:12px;padding:12px;font-size:15px;line-height:1.45;resize:vertical;margin-top:10px}
+
+    .panelBody{padding:16px}         /* content area under sticky head */
+
+    .txt{
+      width:100%;min-height:220px;background:#0f1218;color:#eff3fb;border:1px solid #263042;
+      border-radius:12px;padding:12px;font-size:15px;line-height:1.45;resize:vertical;margin-top:10px
+    }
 
     /* Markdown preview styling */
     .md{background:#0c1017;border:1px solid #263042;border-radius:12px;padding:12px;margin-top:8px}
@@ -128,15 +150,17 @@
         </div>
       </div>
 
-      <!-- Live Markdown preview -->
-      <div id="mdPreview" class="md" style="display:none"></div>
+      <div class="panelBody">
+        <!-- Live Markdown preview -->
+        <div id="mdPreview" class="md" style="display:none"></div>
 
-      <!-- Editor -->
-      <textarea id="modalTxt" class="txt" placeholder="Use markdown:
+        <!-- Editor -->
+        <textarea id="modalTxt" class="txt" placeholder="Use markdown:
 ## Heading
 - Bullet
 **Bold** and *italics*"></textarea>
-      <div class="hint">Single Enter = line break · Blank line = new paragraph · <code>##</code> heading is gold · <code>- </code> bullets · <code>**bold**</code>, <code>*italics*</code>.</div>
+        <div class="hint">Single Enter = line break · Blank line = new paragraph · <code>##</code> heading is gold · <code>- </code> bullets · <code>**bold**</code>, <code>*italics*</code>.</div>
+      </div>
     </div>
   </div>
 
@@ -281,7 +305,7 @@
   });
 
   // ---------- Markdown helpers ----------
-  function escapeHtml(s){ return String(s||"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+  function escapeHtml(s){ return String(s||"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;","»":"&raquo;","<":"&lt;","\"":"&quot;","'":"&#39;"}[c])); }
   function normalize(s){ return String(s||"").replace(/\r\n/g,"\n").replace(/\r/g,"\n"); }
 
   // Headings (#/##) anywhere, bullets (-), bold ** **, italics * *
@@ -341,7 +365,8 @@
   }
 
   function inlineMarkdown(s){
-    s = escapeHtml(s);
+    s = String(s||"")
+      .replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
     s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
     s = s.replace(/\*(.+?)\*/g, "<em>$1</em>");
     return s;
