@@ -20,43 +20,30 @@
     }
     *{box-sizing:border-box}
     html,body{
-      margin:0;height:100%;background:var(--bg);color:var(--text);
+      margin:0;height:100%;
+      background:var(--bg);color:var(--text);
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      /* Universal clamp: kill horizontal scroll everywhere */
-      overflow-x:hidden;
-      max-width:100vw;
+      overflow-x:clip;max-width:100vw;
     }
-
-    /* Wrap keeps your desktop width; clamp prevents overflow on phones */
-    .wrap{
-      max-width:980px;
-      margin:0 auto;
-      padding:28px 16px 60px;
-      max-width:min(980px,100vw);
-    }
+    .wrap{max-width:980px;margin:0 auto;padding:28px 16px 60px}
 
     /* Header */
     .hero{
       background:linear-gradient(180deg,var(--blue),var(--blue-grad));
-      border-bottom:2px solid rgba(215,193,120,.35); box-shadow:var(--shadow);
-      border-radius:0 0 var(--radius) var(--radius); padding:18px 16px 20px;
+      border-bottom:2px solid rgba(215,193,120,.35);
+      box-shadow:var(--shadow);
+      border-radius:0 0 var(--radius) var(--radius);
+      padding:18px 16px 20px;            /* desktop/default */
       position:sticky; top:0; z-index:5;
-      /* clip shadows/rounded edges so they can't cause side scroll */
-      overflow:hidden;
-      max-width:100vw;
+      overflow:hidden; max-width:100vw;
     }
     .title{display:flex;align-items:center;gap:14px;margin:0 0 12px 0;
       font-weight:800;letter-spacing:.2px;font-size:22px;color:#fff}
     .badge{background:rgba(215,193,120,.18);color:#fff;border:1px solid rgba(215,193,120,.5);
       padding:4px 10px;border-radius:999px;font-size:12px}
-    .bar{display:grid;grid-template-columns:1fr auto auto;gap:10px}
+    .bar{display:grid;grid-template-columns:1fr auto auto;gap:10px;max-width:100%}
     .input,.select{background:#0f1218;border:1px solid #1f2531;border-radius:12px;
-      padding:12px 12px;font-size:15px;color:#fff;outline:none;width:100%;
-      /* iOS select sometimes causes overflows; keep it tidy */
-      max-width:100%;
-      appearance:auto;
-      -webkit-appearance:menulist;
-    }
+      padding:12px 12px;font-size:15px;color:#fff;outline:none;min-width:0}
     .tabs{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
     .tab{background:var(--chip);color:#d9e2f1;border:1px solid #2f3746;cursor:pointer;
       padding:8px 12px;border-radius:999px;font-weight:600;font-size:13px}
@@ -81,19 +68,20 @@
       position:fixed;inset:0;background:rgba(0,0,0,.5);
       display:none;align-items:center;justify-content:center;
       padding:clamp(8px,2vh,16px);z-index:20;
-      max-width:100vw; overflow-x:hidden;
+      max-width:100vw;overflow-x:clip;
     }
     .modal.show{display:flex}
     .panel{
       width:min(820px,96vw);
-      max-height:92vh;
-      overflow:auto;
+      max-height:92vh;                /* <= prevents offscreen */
+      overflow:auto;                  /* <= scroll inside */
       background:linear-gradient(180deg,var(--panel),var(--elev));
       border:1px solid #2a3242;border-radius:18px;box-shadow:var(--shadow);
-      padding:0;display:block;
+      padding:0;                      /* we'll pad inner sections */
+      display:block;
     }
     .panelHead{
-      position:sticky; top:0; z-index:1;
+      position:sticky; top:0; z-index:1; /* <= stays visible */
       background:linear-gradient(180deg,var(--panel),#151922);
       border-bottom:1px solid #2a3242;
       display:flex;align-items:center;justify-content:space-between;gap:8px;
@@ -105,7 +93,8 @@
       padding:10px 12px;font-weight:700;font-size:14px;cursor:pointer}
     .btn.gold{background:var(--gold);color:#141616;border:0}
     .btn.danger{border-color:#4a2626;background:#1a0f10;color:#f3c9c9}
-    .panelBody{padding:16px}
+
+    .panelBody{padding:16px}         /* content area under sticky head */
 
     .txt{
       width:100%;min-height:220px;background:#0f1218;color:#eff3fb;border:1px solid #263042;
@@ -116,35 +105,26 @@
     .md{background:#0c1017;border:1px solid #263042;border-radius:12px;padding:12px;margin-top:8px}
     .md h1,.md h2{margin:.2rem 0 .5rem 0; color:var(--gold)}
     .md h1{font-size:1.2rem} .md h2{font-size:1.05rem}
-    .md p{margin:0.9rem 0;color:#fff;white-space:pre-wrap;}
+    .md p{
+      margin:0.9rem 0;       /* paragraph gap */
+      color:#fff;
+      white-space:pre-wrap;   /* keep single-Enter line breaks */
+    }
     .md ul{margin:.35rem 0 .35rem 1.1rem}
     .md li{margin:.2rem 0;color:#e8edf8}
     .md em{font-style:italic} .md strong{font-weight:800;color:#fff}
     .hint{color:#9fb0c9;font-size:12px;margin-top:6px}
     .footer{opacity:.8;font-size:12px;margin-top:14px}
 
-    /* ===== Mobile tweaks: extra-compact sticky header & clamp ===== */
+    /* ---- Mobile header 25% shorter (ONLY change) ---- */
     @media (max-width:600px){
-      .wrap{padding:18px 12px 48px}
-      .hero{
-        padding:10px 12px 12px;
-        border-radius:0 0 12px 12px;
-      }
+      .hero{padding:9px 12px 10px;} /* was 18px 16px 20px */
       .title{font-size:19px;margin:0 0 6px;gap:10px}
       .badge{font-size:11px;padding:3px 8px}
-      .bar{
-        grid-template-columns:1fr 1fr; /* search | A–Z */
-        gap:8px;
-      }
-      .btns{grid-column:1 / -1;}      /* tabs row spans full width */
-      .input,.select{
-        padding:9px 11px;             /* smaller controls */
-        font-size:16px;
-      }
-      .tabs{gap:8px;margin-top:8px}
-      .tab{padding:7px 11px;font-size:14px}
-      /* Absolute clamp of every top section to viewport */
-      body, .hero, .wrap { max-width:100vw; overflow-x:hidden; }
+      .bar{grid-template-columns:1fr 1fr;gap:8px;}
+      .input,.select{padding:9px 11px;font-size:16px;}
+      .tabs{gap:7px;margin-top:7px}
+      .tab{padding:7px 10px;font-size:13.5px}
     }
   </style>
 </head>
@@ -192,7 +172,10 @@
       </div>
 
       <div class="panelBody">
+        <!-- Live Markdown preview -->
         <div id="mdPreview" class="md" style="display:none"></div>
+
+        <!-- Editor -->
         <textarea id="modalTxt" class="txt" placeholder="Use markdown:
 ## Heading
 - Bullet
@@ -204,6 +187,7 @@
 
 <script>
 (() => {
+  // JSON sources (leave as /data/ unless you moved the files)
   const SOURCES = { primary:"data/primary.json", terrain:"data/terrain.json", secondary:"data/secondary.json" };
 
   let currentTab = "secondary";
@@ -219,6 +203,7 @@
 
   const keyFor = (tab,title)=>`ca2025:text:${tab}:${title}`;
 
+  // Tabs
   document.querySelectorAll('.tab').forEach(btn=>{
     btn.addEventListener('click', async () => {
       document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
@@ -229,10 +214,12 @@
     });
   });
 
+  // Load + render
   async function loadAndRender(){
     try{
       const res = await fetch(SOURCES[currentTab], {cache:"no-cache"});
       const data = await res.json();
+      // Expect data.items = [{title, text?}] OR flat array of {title, text}
       const raw = Array.isArray(data) ? data : (data.items||[]);
       items = raw.slice().sort((a,b)=>a.title.localeCompare(b.title));
       buildJump(items);
@@ -261,6 +248,7 @@
     });
   }
 
+  // A–Z jump
   function buildJump(list){
     const letters = [...new Set(list.map(x=>x.title[0].toUpperCase()))].sort();
     jump.innerHTML = `<option value="">A–Z jump</option>`+
@@ -274,6 +262,7 @@
   });
   search.addEventListener('input', ()=>render(items));
 
+  // Modal editor
   function openEditor(title){
     modalTitle.textContent = title;
     const saved = localStorage.getItem(keyFor(currentTab,title));
@@ -296,6 +285,7 @@
     render(items);
   };
 
+  // Preview toggle (markdown with headings anywhere + paragraph logic)
   previewBtn.addEventListener('click', ()=>{
     if(mdPreview.style.display === "none"){
       mdPreview.innerHTML = renderMarkdown(modalTxt.value);
@@ -305,6 +295,7 @@
     }
   });
 
+  // Export / Import
   document.getElementById('exportBtn').onclick = ()=>{
     const dump = {};
     items.forEach(it=>{
@@ -334,12 +325,16 @@
     e.target.value = "";
   });
 
+  // ---------- Markdown helpers ----------
   function escapeHtml(s){ return String(s||"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;","»":"&raquo;","<":"&lt;","\"":"&quot;","'":"&#39;"}[c])); }
   function normalize(s){ return String(s||"").replace(/\r\n/g,"\n").replace(/\r/g,"\n"); }
 
+  // Headings (#/##) anywhere, bullets (-), bold ** **, italics * *
+  // Single newline -> <br>; blank line -> new paragraph
   function renderMarkdown(src){
     const text = normalize(src);
     const lines = text.split("\n");
+
     let html = [];
     let inList = false;
     let para = [];
@@ -350,38 +345,60 @@
         para = [];
       }
     };
-    const flushList = () => { if (inList){ html.push('</ul>'); inList = false; } };
+    const flushList = () => {
+      if (inList){ html.push('</ul>'); inList = false; }
+    };
 
     for (let i = 0; i < lines.length; i++){
       const line = lines[i];
-      if (/^\s*$/.test(line)){ flushList(); flushPara(); continue; }
+
+      // blank line = paragraph break
+      if (/^\s*$/.test(line)){
+        flushList();
+        flushPara();
+        continue;
+      }
+
+      // headings anywhere (need a space after # or ##)
       if (/^#{1,2}\s+/.test(line)){
-        flushList(); flushPara();
+        flushList();
+        flushPara();
         const lvl = line.startsWith('##') ? 'h2' : 'h1';
         html.push(`<${lvl}>${inlineMarkdown(line.replace(/^#{1,2}\s+/, ''))}</${lvl}>`);
         continue;
       }
+
+      // bullet lists
       if (/^\s*[-*]\s+/.test(line)){
-        flushPara(); if (!inList){ html.push('<ul>'); inList = true; }
-        html.push(`<li>${inlineMarkdown(line.replace(/^\s*[-*]\s+/, ''))}</li>`); continue;
+        flushPara();
+        if (!inList){ html.push('<ul>'); inList = true; }
+        html.push(`<li>${inlineMarkdown(line.replace(/^\s*[-*]\s+/, ''))}</li>`);
+        continue;
       }
+
+      // otherwise part of a paragraph
       para.push(line);
     }
-    flushList(); flushPara();
+
+    flushList();
+    flushPara();
     return html.join('\n');
   }
 
   function inlineMarkdown(s){
-    s = String(s||"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+    s = String(s||"")
+      .replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
     s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
     s = s.replace(/\*(.+?)\*/g, "<em>$1</em>");
     return s;
   }
 
+  // Service worker (offline)
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('service-worker.js').catch(()=>{});
   }
 
+  // Go
   loadAndRender();
 })();
 </script>
