@@ -27,20 +27,36 @@
     }
     .wrap{max-width:980px;margin:0 auto;padding:28px 16px 60px}
 
-    /* Header */
+    /* Header (blue) */
     .hero{
       background:linear-gradient(180deg,var(--blue),var(--blue-grad));
       border-bottom:2px solid rgba(215,193,120,.35);
       box-shadow:var(--shadow);
       border-radius:0 0 var(--radius) var(--radius);
-      padding:18px 16px 20px;           /* desktop size */
+      /* ↓  shorter than previous (was 18/20) */
+      padding:14px 16px 14px;
       position:sticky; top:0; z-index:5;
       overflow:hidden; max-width:100vw;
     }
-    .title{display:flex;align-items:center;gap:14px;margin:0 0 12px 0;
-      font-weight:800;letter-spacing:.2px;font-size:22px;color:#fff}
-    .badge{background:rgba(215,193,120,.18);color:#fff;border:1px solid rgba(215,193,120,.5);
-      padding:4px 10px;border-radius:999px;font-size:12px}
+    .title{
+      display:flex;align-items:center;gap:12px;
+      margin:0 0 8px 0; /* tighter */
+      font-weight:800;letter-spacing:.2px;font-size:22px;color:#fff
+    }
+    /* New, tidy 40K badge */
+    .logo40k{
+      display:inline-flex;align-items:center;justify-content:center;
+      width:44px;height:28px;border-radius:10px;
+      background:linear-gradient(180deg,#1e3a78,#274690);
+      border:1px solid rgba(215,193,120,.55);
+      color:#fff;font-weight:900;font-size:14px;letter-spacing:.5px;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);
+      flex:0 0 auto;
+    }
+    .badge{
+      background:rgba(215,193,120,.18);color:#fff;border:1px solid rgba(215,193,120,.5);
+      padding:4px 10px;border-radius:999px;font-size:12px
+    }
     .bar{display:grid;grid-template-columns:1fr auto;gap:10px;max-width:100%}
     .input,.select{background:#0f1218;border:1px solid #1f2531;border-radius:12px;
       padding:12px 12px;font-size:15px;color:#fff;outline:none;min-width:0}
@@ -72,9 +88,7 @@
     }
     .modal.show{display:flex}
     .panel{
-      width:min(820px,96vw);
-      max-height:92vh;
-      overflow:auto;
+      width:min(820px,96vw);max-height:92vh;overflow:auto;
       background:linear-gradient(180deg,var(--panel),var(--elev));
       border:1px solid #2a3242;border-radius:18px;box-shadow:var(--shadow);
       padding:0; display:block;
@@ -92,9 +106,7 @@
       padding:10px 12px;font-weight:700;font-size:14px;cursor:pointer}
     .btn.gold{background:var(--gold);color:#141616;border:0}
     .btn.danger{border-color:#4a2626;background:#1a0f10;color:#f3c9c9}
-
     .panelBody{padding:16px}
-
     .txt{
       width:100%;min-height:220px;background:#0f1218;color:#eff3fb;border:1px solid #263042;
       border-radius:12px;padding:12px;font-size:15px;line-height:1.45;resize:vertical;margin-top:10px
@@ -111,27 +123,25 @@
     .hint{color:#9fb0c9;font-size:12px;margin-top:6px}
     .footer{opacity:.8;font-size:12px;margin-top:14px}
 
-    /* -------- MOBILE: 25% shorter header + rock-solid layout (search | jump on row 1, tabs on row 2) -------- */
+    /* -------- Mobile tweaks (keep your layout; shorter header; fixed areas) -------- */
     @media (max-width:600px){
-      .hero{padding:12px 12px 12px;}         /* shorter header */
+      .hero{padding:10px 12px 10px;}                 /* shorter than before */
       .title{font-size:20px;margin:0 0 6px;gap:10px}
       .badge{font-size:11px;padding:3px 8px}
+      .logo40k{width:40px;height:26px;font-size:13px;border-radius:9px}
 
-      /* Named grid areas prevent squashing */
       .bar{
         display:grid;
         grid-template-columns:1fr auto;
         grid-template-areas:
           "search jump"
           "tabs   tabs";
-        gap:8px;
-        align-items:center;
+        gap:8px; align-items:center;
       }
       #search.input{grid-area:search}
       #jump.select{grid-area:jump}
       .tabs{grid-area:tabs;margin-top:4px;gap:7px}
 
-      /* Slightly tighter controls but not tall */
       .input,.select{padding:10px 12px;font-size:16px}
       .tab{padding:7px 10px;font-size:13px}
     }
@@ -141,7 +151,7 @@
   <div class="hero">
     <div class="wrap">
       <div class="title">
-        <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(180deg,#1e3a78,#274690);border:1px solid rgba(215,193,120,.55);display:flex;align-items:center;justify-content:center;font-weight:900;">40K</div>
+        <span class="logo40k">40K</span>
         Chapter Approved 2025
         <span class="badge">Offline-capable</span>
       </div>
@@ -330,10 +340,8 @@
     const text = normalize(src);
     const lines = text.split("\n");
     let html = [], inList = false, para = [];
-
     const flushPara = () => { if (para.length){ html.push(`<p>${para.map(l => inlineMarkdown(l)).join('<br>')}</p>`); para = []; } };
     const flushList = () => { if (inList){ html.push('</ul>'); inList = false; } };
-
     for (let i = 0; i < lines.length; i++){
       const line = lines[i];
       if (/^\s*$/.test(line)){ flushList(); flushPara(); continue; }
