@@ -291,21 +291,50 @@
 (() => {
   const SOURCES = { primary:"data/primary.json", terrain:"data/terrain.json", secondary:"data/secondary.json" };
   
-// Scoring persistence
-const SCORING_KEY = 'ca2025:scoring:v1';
-const DEFAULT_SCORING_STATE = {
-  p1: 'Player 1',
-  p2: 'Player 2',
-  // 5 rounds; each holds Primary & Secondary for both players
-  rounds: [
-    { p1p:0, p1s:0, p2p:0, p2s:0 },
-    { p1p:0, p1s:0, p2p:0, p2s:0 },
-    { p1p:0, p1s:0, p2p:0, p2s:0 },
-    { p1p:0, p1s:0, p2p:0, p2s:0 },
-    { p1p:0, p1s:0, p2p:0, p2s:0 },
-  ],
-};
-  
+  // ==== SCORING: state + helpers ====
+  const SCORING_KEY = 'ca2025:scoring:v1';
+  let scoring = null;
+
+  function loadScoring(){
+    try{
+      const raw = localStorage.getItem(SCORING_KEY);
+      if(raw){
+        scoring = JSON.parse(raw);
+      }else{
+        scoring = {
+          players: { a: 'Player A', b: 'Player B' },
+          // 5 rounds, each with primary/secondary for A & B
+          rounds: Array.from({length:5}, ()=>({
+            a:{p:0,s:0}, b:{p:0,s:0}
+          }))
+        };
+      }
+    }catch(e){
+      scoring = {
+        players: { a: 'Player A', b: 'Player B' },
+        rounds: Array.from({length:5}, ()=>({
+          a:{p:0,s:0}, b:{p:0,s:0}
+        }))
+      };
+    }
+  }
+
+  function saveScoring(){
+    try{ localStorage.setItem(SCORING_KEY, JSON.stringify(scoring)); }catch(e){}
+  }
+
+  function totals(){
+    let aP=0,aS=0,bP=0,bS=0;
+    scoring.rounds.forEach(r=>{
+      aP += Number(r.a.p||0); aS += Number(r.a.s||0);
+      bP += Number(r.b.p||0); bS += Number(r.b.s||0);
+    });
+    return {
+      aPrim:aP, aSec:aS, aTotal:aP+aS,
+      bPrim:bP, bSec:bS, bTotal:bP+bS
+    };
+  }
+
   let currentTab = "secondary";
   let items = [];
   const grid = document.getElementById('grid');
@@ -332,6 +361,11 @@ const DEFAULT_SCORING_STATE = {
       btn.classList.add('active');
       currentTab = btn.dataset.tab;
       search.value = "";
+
+      if(currentTab === 'scoring'){
+        renderScoring();
+        return;
+      }
       await loadAndRender();
     });
   });
@@ -702,6 +736,166 @@ function renderScoring(){
   // Initial totals
   updateTotals(state);
 }
+  // ==== SCORING: UI (stacked cards, mobile-friendly, no horizontal scroll) ====
+
+  function buildScoreCardsHTML(){
+    const t = totals();
+
+    const namesHTML = `
+      <div class="scoreNames" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <input id="pAName" class="input" placeholder="Player A" value="${escapeHtml(scoring.players.a)}" />
+        <input id="pBName" class="input" placeholder="Player B" value="${escapeHtml(scoring.players.b)}" />
+      </div>
+    `;
+
+    const cards = scoring.rounds.map((r, i) => {
+      const rNum = i+1;
+      return `
+        <div class="roundCard">
+          <div class="roundHead">Round ${rNum}</div>
+          <div class="row">
+            <div class="col">
+              <div class="lbl">${escapeHtml(scoring.players.a)}</div>
+              <div class="fields">
+                <label>Primary
+                  <input type="number" min="0" max="15" step="1"
+                         data-r="${i}" data-pl="a" data-kind="p"
+                         value="${Number(r.a.p)||0}">
+                </label>
+                <label>Secondary
+                  <input type="number" min="0" max="15" step="1"
+                         data-r="${i}" data-pl="a" data-kind="s"
+                         value="${Number(r.a.s)||0}">
+                </label>
+              </div>
+            </div>
+            <div class="col">
+              <div class="lbl">${escapeHtml(scoring.players.b)}</div>
+              <div class="fields">
+                <label>Primary
+                  <input type="number" min="0" max="15" step="1"
+                         data-r="${i}" data-pl="b" data-kind="p"
+                         value="${Number(r.b.p)||0}">
+                </label>
+                <label>Secondary
+                  <input type="number" min="0" max="15" step="1"
+                         data-r="${i}" data-pl="b" data-kind="s"
+                         value="${Number(r.b.s)||0}">
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const totalsHTML = `
+      <div class="totalsBar">
+        <div class="tot">
+          <div class="name">${escapeHtml(scoring.players.a)}</div>
+          <div class="nums">
+            <span>P: <strong>${t.aPrim}</strong></span>
+            <span>S: <strong>${t.aSec}</strong></span>
+            <span>Total: <strong>${t.aTotal}</strong></span>
+          </div>
+        </div>
+        <div class="tot">
+          <div class="name">${escapeHtml(scoring.players.b)}</div>
+          <div class="nums">
+            <span>P: <strong>${t.bPrim}</strong></span>
+            <span	S: <strong>${t.bSec}</strong></span>
+            <span>Total: <strong>${t.bTotal}</strong></span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const actionsHTML = `
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <button id="resetScores" class="btn danger">Reset</button>
+      </div>
+    `;
+
+    return `
+      <div class="scoreWrap">
+        ${namesHTML}
+        ${cards}
+        ${totalsHTML}
+        ${actionsHTML}
+      </div>
+    `;
+  }
+
+  function renderScoring(){
+    // clear grid and render scoring UI
+    loadScoring();
+    grid.innerHTML = buildScoreCardsHTML();
+
+    // Names
+    const pA = document.getElementById('pAName');
+    const pB = document.getElementById('pBName');
+    pA?.addEventListener('input', () => {
+      scoring.players.a = pA.value.trim() || 'Player A';
+      saveScoring();
+      updateTotalsBar(); // refresh names in totals
+      // also refresh round labels
+      document.querySelectorAll('.roundCard .col .lbl')[0].textContent = scoring.players.a;
+    });
+    pB?.addEventListener('input', () => {
+      scoring.players.b = pB.value.trim() || 'Player B';
+      saveScoring();
+      updateTotalsBar();
+      document.querySelectorAll('.roundCard .col .lbl')[1].textContent = scoring.players.b;
+    });
+
+    // Scores
+    grid.querySelectorAll('input[type="number"][data-r]').forEach(inp=>{
+      inp.addEventListener('input', handleScoreInput);
+    });
+
+    // Reset
+    const resetBtn = document.getElementById('resetScores');
+    resetBtn?.addEventListener('click', ()=>{
+      if(!confirm('Clear all scores and names?')) return;
+      localStorage.removeItem(SCORING_KEY);
+      loadScoring();
+      renderScoring();
+    });
+
+    updateTotalsBar();
+  }
+
+  function handleScoreInput(e){
+    const el = e.currentTarget;
+    const r = Number(el.getAttribute('data-r'));
+    const pl = el.getAttribute('data-pl'); // 'a' | 'b'
+    const kind = el.getAttribute('data-kind'); // 'p' | 's'
+    const val = Math.max(0, Number(el.value||0));
+    // clamp a bit (you can change if you like)
+    el.value = String(val);
+    scoring.rounds[r][pl][kind] = val;
+    saveScoring();
+    updateTotalsBar();
+  }
+
+  function updateTotalsBar(){
+    const t = totals();
+    const totEls = grid.querySelectorAll('.totalsBar .tot');
+    if(totEls[0]){
+      totEls[0].querySelector('.name').textContent = scoring.players.a;
+      const spans = totEls[0].querySelectorAll('.nums span strong');
+      spans[0].textContent = t.aPrim;
+      spans[1].textContent = t.aSec;
+      spans[2].textContent = t.aTotal;
+    }
+    if(totEls[1]){
+      totEls[1].querySelector('.name').textContent = scoring.players.b;
+      const spans = totEls[1].querySelectorAll('.nums span strong');
+      spans[0].textContent = t.bPrim;
+      spans[1].textContent = t.bSec;
+      spans[2].textContent = t.bTotal;
+    }
+  }
 
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('service-worker.js').catch(()=>{});
