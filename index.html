@@ -290,7 +290,22 @@
 <script>
 (() => {
   const SOURCES = { primary:"data/primary.json", terrain:"data/terrain.json", secondary:"data/secondary.json" };
-
+  
+// Scoring persistence
+const SCORING_KEY = 'ca2025:scoring:v1';
+const DEFAULT_SCORING_STATE = {
+  p1: 'Player 1',
+  p2: 'Player 2',
+  // 5 rounds; each holds Primary & Secondary for both players
+  rounds: [
+    { p1p:0, p1s:0, p2p:0, p2s:0 },
+    { p1p:0, p1s:0, p2p:0, p2s:0 },
+    { p1p:0, p1s:0, p2p:0, p2s:0 },
+    { p1p:0, p1s:0, p2p:0, p2s:0 },
+    { p1p:0, p1s:0, p2p:0, p2s:0 },
+  ],
+};
+  
   let currentTab = "secondary";
   let items = [];
   const grid = document.getElementById('grid');
@@ -328,6 +343,11 @@
   }
 
   async function loadAndRender(){
+    // NEW: scoring tab short-circuit
+  if (currentTab === 'scoring') {
+    renderScoring();
+    return;
+  }
     try{
       const data = await fetchJson(SOURCES[currentTab]);
       renderFromData(data || {});
@@ -528,6 +548,160 @@
     s = s.replace(/(^|[^*])\*(?!\*)([\s\S]+?)\*(?!\*)/g, "$1<em>$2</em>");
     return s;
   }
+// ======= Scoring helpers & renderer =======
+function loadScoreState(){
+  try {
+    const raw = localStorage.getItem(SCORING_KEY);
+    if (!raw) return structuredClone(DEFAULT_SCORING_STATE);
+    const parsed = JSON.parse(raw);
+    // Defensive: ensure shape matches
+    if (!parsed || !Array.isArray(parsed.rounds) || parsed.rounds.length !== 5) {
+      return structuredClone(DEFAULT_SCORING_STATE);
+    }
+    return parsed;
+  } catch {
+    return structuredClone(DEFAULT_SCORING_STATE);
+  }
+}
+
+function saveScoreState(state){
+  localStorage.setItem(SCORING_KEY, JSON.stringify(state));
+}
+
+function sumPlayer(state, which /* 'p1' or 'p2' */){
+  let total = 0;
+  for (const r of state.rounds){
+    total += Number(r[which+'p']||0) + Number(r[which+'s']||0);
+  }
+  return total;
+}
+
+function inputNum(val){
+  const n = Number(val);
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
+}
+
+function renderScoring(){
+  const state = loadScoreState();
+
+  // Build the scoring UI into #grid
+  grid.innerHTML = `
+    <div class="scoreWrap">
+      <div class="nameRow">
+        <input id="p1Name" class="nameInput" value="${escapeHtml(state.p1)}" aria-label="Player 1 name">
+        <input id="p2Name" class="nameInput" value="${escapeHtml(state.p2)}" aria-label="Player 2 name">
+        <button id="swapNames" class="btn small" type="button">Swap</button>
+        <button id="resetScores" class="btn small danger" type="button">Reset</button>
+      </div>
+
+      <table class="scoreTable">
+        <thead>
+          <tr>
+            <th>Round</th>
+            <th>${escapeHtml(state.p1)} – Primary</th>
+            <th>${escapeHtml(state.p1)} – Secondary</th>
+            <th>${escapeHtml(state.p2)} – Primary</th>
+            <th>${escapeHtml(state.p2)} – Secondary</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${state.rounds.map((r, idx) => `
+            <tr data-row="${idx}">
+              <td style="font-weight:800">${idx+1}</td>
+              <td><input class="num" inputmode="numeric" pattern="[0-9]*" data-field="p1p" value="${r.p1p}"></td>
+              <td><input class="num" inputmode="numeric" pattern="[0-9]*" data-field="p1s" value="${r.p1s}"></td>
+              <td><input class="num" inputmode="numeric" pattern="[0-9]*" data-field="p2p" value="${r.p2p}"></td>
+              <td><input class="num" inputmode="numeric" pattern="[0-9]*" data-field="p2s" value="${r.p2s}"></td>
+            </tr>
+          `).join('')}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td style="text-align:right">Totals</td>
+            <td id="t_p1p"></td>
+            <td id="t_p1s"></td>
+            <td id="t_p2p"></td>
+            <td id="t_p2s"></td>
+          </tr>
+          <tr>
+            <td style="text-align:right">Current Total</td>
+            <td colspan="2" id="t_p1" style="text-align:center"></td>
+            <td colspan="2" id="t_p2" style="text-align:center"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  `;
+
+  // Hook up name changes
+  const p1Name = document.getElementById('p1Name');
+  const p2Name = document.getElementById('p2Name');
+  const swapBtn = document.getElementById('swapNames');
+  const resetBtn = document.getElementById('resetScores');
+
+  function refreshHeadings(){
+    const thead = grid.querySelector('.scoreTable thead tr');
+    thead.children[1].textContent = `${p1Name.value} – Primary`;
+    thead.children[2].textContent = `${p1Name.value} – Secondary`;
+    thead.children[3].textContent = `${p2Name.value} – Primary`;
+    thead.children[4].textContent = `${p2Name.value} – Secondary`;
+  }
+
+  p1Name.addEventListener('input', ()=>{
+    state.p1 = p1Name.value || 'Player 1';
+    saveScoreState(state);
+    refreshHeadings();
+  });
+  p2Name.addEventListener('input', ()=>{
+    state.p2 = p2Name.value || 'Player 2';
+    saveScoreState(state);
+    refreshHeadings();
+  });
+
+  swapBtn.addEventListener('click', ()=>{
+    const tmp = state.p1; state.p1 = state.p2; state.p2 = tmp;
+    const tmpR = state.rounds.map(r=>({p1p:r.p2p, p1s:r.p2s, p2p:r.p1p, p2s:r.p1s}));
+    state.rounds = tmpR;
+    saveScoreState(state);
+    // re-render cleanly
+    renderScoring();
+  });
+
+  resetBtn.addEventListener('click', ()=>{
+    if(!confirm('Reset all scores and names?')) return;
+    const fresh = structuredClone(DEFAULT_SCORING_STATE);
+    saveScoreState(fresh);
+    renderScoring();
+  });
+
+  // Hook up number inputs
+  grid.querySelectorAll('tbody tr').forEach(tr=>{
+    const rowIdx = Number(tr.getAttribute('data-row'));
+    tr.querySelectorAll('input.num').forEach(inp=>{
+      inp.addEventListener('input', ()=>{
+        const field = inp.getAttribute('data-field'); // p1p, p1s, p2p, p2s
+        state.rounds[rowIdx][field] = inputNum(inp.value);
+        saveScoreState(state);
+        updateTotals(state);
+      });
+    });
+  });
+
+  function updateTotals(s){
+    let p1p=0,p1s=0,p2p=0,p2s=0;
+    for(const r of s.rounds){ p1p+=r.p1p; p1s+=r.p1s; p2p+=r.p2p; p2s+=r.p2s; }
+    const $ = id => document.getElementById(id);
+    $('t_p1p').textContent = p1p;
+    $('t_p1s').textContent = p1s;
+    $('t_p2p').textContent = p2p;
+    $('t_p2s').textContent = p2s;
+    $('t_p1').textContent  = String(p1p + p1s);
+    $('t_p2').textContent  = String(p2p + p2s);
+  }
+
+  // Initial totals
+  updateTotals(state);
+}
 
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('service-worker.js').catch(()=>{});
