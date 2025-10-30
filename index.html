@@ -79,6 +79,9 @@
     .chipSaved{position:absolute;right:10px;top:10px;background:rgba(61,141,93,.18);
       border:1px solid rgba(61,141,93,.55);color:#bdf4cf;font-size:11px;padding:4px 8px;border-radius:999px}
 
+    /* Terrain images inside cards */
+    .terrainImg{width:100%;height:auto;display:block;border-radius:12px}
+
     /* Modal */
     .modal{
       position:fixed;inset:0;background:rgba(0,0,0,.5);
@@ -232,8 +235,15 @@
     try{
       const res = await fetch(SOURCES[currentTab], {cache:"no-cache"});
       const data = await res.json();
-      const raw = Array.isArray(data) ? data : (data.items||[]);
-      items = raw.slice().sort((a,b)=>a.title.localeCompare(b.title));
+
+      // *** SURGICAL CHANGE: handle grouped Terrain data ***
+      if (currentTab === "terrain" && data && Array.isArray(data.groups)) {
+        items = data; // keep whole object (with groups)
+      } else {
+        const raw = Array.isArray(data) ? data : (data.items||[]);
+        items = raw.slice().sort((a,b)=>a.title.localeCompare(b.title));
+      }
+
       buildJump(items);
       render(items);
     }catch(e){
@@ -243,6 +253,43 @@
 
   function render(list){
     const q = search.value.trim().toLowerCase();
+
+    // *** SURGICAL CHANGE: special render path for Terrain groups ***
+    if (currentTab === "terrain" && list && Array.isArray(list.groups)) {
+      // Filter by title if searching (matches image title)
+      const groups = list.groups.map(g=>{
+        const filteredItems = q
+          ? (g.items||[]).filter(it => (it.title||"").toLowerCase().includes(q))
+          : (g.items||[]);
+        return {...g, items: filteredItems};
+      });
+
+      // Build HTML
+      grid.innerHTML = groups.map(group=>{
+        const header = `<div class="cardHead" data-group="${escapeHtml(group.group)}" style="border-radius:12px;margin-top:6px">${escapeHtml(group.group)}</div>`;
+        const imgs = (group.items||[]).map(it=>`
+          <div class="card" data-img="${escapeHtml(it.src||'')}" data-title="${escapeHtml(it.title||'')}">
+            <div class="cardHead">${escapeHtml(it.title||'Layout')}</div>
+            <div class="cardBody">
+              <img class="terrainImg" alt="${escapeHtml(it.title||'Layout')}" src="${escapeHtml(it.src||'')}">
+            </div>
+          </div>
+        `).join('');
+        return `${header}<div class="grid">${imgs || `<div style="opacity:.7;padding:10px">No matches in ${escapeHtml(group.group)}</div>`}</div>`;
+      }).join('') || `<div style="opacity:.8">No results.</div>`;
+
+      // Click: open image fullscreen in modal
+      grid.querySelectorAll('.card').forEach(card=>{
+        card.addEventListener('click',()=>{
+          const title = card.dataset.title || 'Layout';
+          const src = card.dataset.img || '';
+          openImage(title, src);
+        });
+      });
+      return; // terrain path done
+    }
+
+    // ---------- original card rendering (primary/secondary) ----------
     const filtered = q ? list.filter(x=>x.title.toLowerCase().includes(q)) : list;
     grid.innerHTML = filtered.map(x=>{
       const saved = localStorage.getItem(keyFor(currentTab, x.title));
@@ -261,17 +308,31 @@
   }
 
   function buildJump(list){
-    const letters = [...new Set(list.map(x=>x.title[0].toUpperCase()))].sort();
+    // *** SURGICAL CHANGE: jump list for terrain = groups; else = A–Z titles ***
+    if (currentTab === "terrain" && list && Array.isArray(list.groups)) {
+      const groups = list.groups.map(g=>g.group).filter(Boolean);
+      jump.innerHTML = `<option value="">Jump to…</option>` +
+        groups.map(g=>`<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+      jump.onchange = ()=>{
+        const v = jump.value;
+        if(!v) return;
+        const el = grid.querySelector(`[data-group="${CSS.escape(v)}"]`);
+        if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+      };
+      return;
+    }
+
+    const letters = (list||[]).map(x=>x.title?.[0]?.toUpperCase()).filter(Boolean);
+    const uniq = [...new Set(letters)].sort();
     jump.innerHTML = `<option value="">A–Z jump</option>`+
-      letters.map(l=>`<option value="${l}">${l}</option>`).join('');
+      uniq.map(l=>`<option value="${l}">${l}</option>`).join('');
+    jump.onchange = ()=>{
+      const letter = jump.value;
+      if(!letter) return;
+      const el = [...grid.querySelectorAll('.card')].find(c=>c.dataset.title.startsWith(letter));
+      if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+    };
   }
-  jump.addEventListener('change', ()=>{
-    const letter = jump.value;
-    if(!letter) return;
-    const el = [...grid.querySelectorAll('.card')].find(c=>c.dataset.title.startsWith(letter));
-    if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
-  });
-  search.addEventListener('input', ()=>render(items));
 
   function openEditor(title){
     modalTitle.textContent = title;
@@ -282,6 +343,17 @@
     modal.classList.add('show');
     modalTxt.focus();
   }
+
+  // *** helper for terrain image fullscreen ***
+  function openImage(title, src){
+    modalTitle.textContent = title || 'Layout';
+    mdPreview.innerHTML = src
+      ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(title||'Layout')}" style="width:100%;height:auto;display:block;border-radius:12px">`
+      : `<div style="opacity:.8">Image not found.</div>`;
+    mdPreview.style.display = "block";
+    modal.classList.add('show');
+  }
+
   document.getElementById('closeBtn').onclick = ()=> modal.classList.remove('show');
   document.getElementById('deleteBtn').onclick = ()=>{
     localStorage.removeItem(keyFor(currentTab, modalTitle.textContent));
@@ -308,7 +380,7 @@
   document.getElementById('exportBtn').onclick = ()=>{
     try{
       const dump = {};
-      items.forEach(it=>{
+      items.forEach?.(it=>{
         const k = keyFor(currentTab, it.title);
         const v = localStorage.getItem(k);
         if (v != null) dump[it.title] = v;
@@ -323,7 +395,6 @@
       a.style.display = 'none';
       document.body.appendChild(a);
 
-      // This tiny delay ensures Chrome registers the node before clicking.
       requestAnimationFrame(()=>{
         a.click();
         requestAnimationFrame(()=>{
@@ -348,8 +419,6 @@
 
     const flushPara = () => {
       if (para.length){
-        // Join whole paragraph so *italics* can span line breaks,
-        // then run inlineMarkdown once, then convert \n to <br>
         const joined = para.join("\n");
         const rendered = inlineMarkdown(joined).replace(/\n/g, "<br>");
         html.push(`<p>${rendered}</p>`);
