@@ -266,7 +266,7 @@
 
       // Build HTML
       grid.innerHTML = groups.map(group=>{
-        const header = `<div class="cardHead" data-group="${escapeHtml(group.group)}" style="border-radius:12px;margin-top:6px">${escapeHtml(group.group)}</div>`;
+        const header = `<div class="cardHead" data-group="${escapeHtml(group.name)}" style="border-radius:12px;margin-top:6px">${escapeHtml(group.group)}</div>`;
         const imgs = (group.items||[]).map(it=>`
           <div class="card" data-img="${escapeHtml(it.src||'')}" data-title="${escapeHtml(it.title||'')}">
             <div class="cardHead">${escapeHtml(it.title||'Layout')}</div>
