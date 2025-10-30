@@ -304,6 +304,39 @@
     }
   });
 
+  // ---------- Robust Export for Chrome (and others) ----------
+  document.getElementById('exportBtn').onclick = ()=>{
+    try{
+      const dump = {};
+      items.forEach(it=>{
+        const k = keyFor(currentTab, it.title);
+        const v = localStorage.getItem(k);
+        if (v != null) dump[it.title] = v;
+      });
+      const payload = JSON.stringify({tab:currentTab, entries:dump}, null, 2);
+      const blob = new Blob([payload], {type:"application/json"});
+
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `ca2025-${currentTab}-text.json`;
+      a.rel = 'noopener';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+
+      // This tiny delay ensures Chrome registers the node before clicking.
+      requestAnimationFrame(()=>{
+        a.click();
+        requestAnimationFrame(()=>{
+          URL.revokeObjectURL(a.href);
+          a.remove();
+        });
+      });
+    }catch(err){
+      console.error('Export failed:', err);
+      alert('Export failed. Open DevTools → Console and tell me the red error lines.');
+    }
+  };
+
   function escapeHtml(s){ return String(s||"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;","»":"&raquo;","<":"&lt;","\"":"&quot;","'":"&#39;"}[c])); }
   function normalize(s){ return String(s||"").replace(/\r\n/g,"\n").replace(/\r/g,"\n"); }
 
@@ -349,7 +382,7 @@
   function inlineMarkdown(s){
     s = String(s||"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
     // Bold across newlines
-    s = s.replace(/\*\*([\s\S]+?)\*\*/g, "<strong>$1</strong>");
+    s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
     // Italics across newlines; avoid matching ** pairs
     s = s.replace(/(^|[^*])\*(?!\*)([\s\S]+?)\*(?!\*)/g, "$1<em>$2</em>");
     return s;
