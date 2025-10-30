@@ -250,25 +250,75 @@
 (() => {
   const SOURCES = { primary:"data/primary.json", terrain:"data/terrain.json", secondary:"data/secondary.json" };
 
-  // ==== SCORING (single, mobile-first implementation) ====
+   // ==== SCORING (single, mobile-first implementation) ====
   const SCORING_KEY = 'ca2025:scoring:v1';
   let scoring = null;
+
+  function normalizeScoring(raw){
+    const freshRound = () => ({ a:{p:0,s:0}, b:{p:0,s:0} });
+    const out = {
+      players: { a:'Player A', b:'Player B' },
+      rounds: Array.from({length:5}, freshRound)
+    };
+    if (!raw || typeof raw !== 'object') return out;
+
+    // Players: accept old or new keys
+    if (raw.players && typeof raw.players === 'object'){
+      if (typeof raw.players.a === 'string') out.players.a = raw.players.a;
+      if (typeof raw.players.b === 'string') out.players.b = raw.players.b;
+    }
+    if (typeof raw.p1 === 'string') out.players.a = raw.p1; // old shape
+    if (typeof raw.p2 === 'string') out.players.b = raw.p2; // old shape
+
+    // Rounds: migrate any known shape into {a:{p,s}, b:{p,s}}
+    if (Array.isArray(raw.rounds) && raw.rounds.length){
+      out.rounds = raw.rounds.slice(0,5).map((r)=>{
+        const fr = freshRound();
+        if (!r || typeof r !== 'object') return fr;
+
+        // New shape already
+        if (r.a && r.b){
+          fr.a.p = toN(r.a.p); fr.a.s = toN(r.a.s);
+          fr.b.p = toN(r.b.p); fr.b.s = toN(r.b.s);
+          return fr;
+        }
+        // Older flat shape: {p1p, p1s, p2p, p2s}
+        if ('p1p' in r || 'p1s' in r || 'p2p' in r || 'p2s' in r){
+          fr.a.p = toN(r.p1p); fr.a.s = toN(r.p1s);
+          fr.b.p = toN(r.p2p); fr.b.s = toN(r.p2s);
+          return fr;
+        }
+        return fr;
+      });
+      // pad to 5 if needed
+      while (out.rounds.length < 5) out.rounds.push(freshRound());
+    }
+    return out;
+
+    function toN(x){ const n = Number(x); return Number.isFinite(n) ? n : 0; }
+  }
 
   function loadScoring(){
     try{
       const raw = localStorage.getItem(SCORING_KEY);
-      scoring = raw ? JSON.parse(raw) : {
-        players: { a: 'Player A', b: 'Player B' },
-        rounds: Array.from({length:5}, () => ({ a:{p:0,s:0}, b:{p:0,s:0} }))
-      };
+      const parsed = raw ? JSON.parse(raw) : null;
+      scoring = normalizeScoring(parsed);
     }catch(e){
-      scoring = { players: { a:'Player A', b:'Player B' }, rounds: Array.from({length:5},()=>({a:{p:0,s:0},b:{p:0,s:0}})) };
+      scoring = normalizeScoring(null);
     }
   }
-  function saveScoring(){ try{ localStorage.setItem(SCORING_KEY, JSON.stringify(scoring)); }catch{} }
+  function saveScoring(){
+    try{ localStorage.setItem(SCORING_KEY, JSON.stringify(scoring)); }catch{}
+  }
   function totals(){
     let aP=0,aS=0,bP=0,bS=0;
-    scoring.rounds.forEach(r=>{ aP+=+r.a.p||0; aS+=+r.a.s||0; bP+=+r.b.p||0; bS+=+r.b.s||0; });
+    (scoring.rounds||[]).forEach(r=>{
+      // ultra-defensive in case of weird data
+      const a = (r && r.a) ? r.a : {p:0,s:0};
+      const b = (r && r.b) ? r.b : {p:0,s:0};
+      aP += Number(a.p)||0; aS += Number(a.s)||0;
+      bP += Number(b.p)||0; bS += Number(b.s)||0;
+    });
     return { aPrim:aP, aSec:aS, aTotal:aP+aS, bPrim:bP, bSec:bS, bTotal:bP+bS };
   }
 
