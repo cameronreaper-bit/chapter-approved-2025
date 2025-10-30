@@ -92,7 +92,6 @@
       box-shadow:var(--shadow);
       margin-top:10px;
     }
-
     .imgWrap{padding:10px}
     .imgWrap img{
       display:block;width:100%;height:auto;border-radius:12px;
@@ -134,7 +133,7 @@
 
     /* Markdown preview styling */
     .md{background:#0c1017;border:1px solid #263042;border-radius:12px;padding:12px;margin-top:8px}
-    .md h1,.md h2{margin:.2rem 0 .5rem 0; color:#d7c178}
+    .md h1,.md h2{margin:.2rem 0 .5rem 0; color:var(--gold)}
     .md h1{font-size:1.2rem} .md h2{font-size:1.05rem}
     .md p{margin:0.9rem 0;color:#fff;white-space:pre-wrap}
     .md ul{margin:.35rem 0 .35rem 1.1rem}
@@ -142,36 +141,21 @@
     .md em{font-style:italic} .md strong{font-weight:800;color:#fff}
     .hint{color:#9fb0c9;font-size:12px;margin-top:6px}
     .footer{opacity:.8;font-size:12px;margin-top:14px}
-    
-    /* ===== SCORING TAB STYLES ===== */
-    .scoreWrap { display: grid; gap: 12px; }
-    .roundCard{
-      background:linear-gradient(180deg,#191e28,#12161e);
-      border:1px solid #242a37;border-radius:16px;box-shadow:var(--shadow);
-      overflow:hidden;
-    }
-    .roundHead{
-      background:linear-gradient(180deg,#1e3a78,#274690);
-      color:#fff;padding:10px 12px;font-weight:800;border-bottom:1px dashed rgba(255,255,255,.25)
-    }
+
+    /* ===== SCORING (stacked cards, mobile-friendly) ===== */
+    .roundCard{background:linear-gradient(180deg,#191e28,#12161e);border:1px solid #242a37;border-radius:16px;box-shadow:var(--shadow);}
+    .roundHead{background:linear-gradient(180deg,#1e3a78,#274690);color:#fff;padding:10px 12px;font-weight:800;border-bottom:1px dashed rgba(255,255,255,.25)}
     .roundCard .row{display:grid;grid-template-columns:1fr;gap:10px;padding:12px}
-    @media(min-width:700px){ .roundCard .row{grid-template-columns:1fr 1fr} }
+    @media(min-width:700px){.roundCard .row{grid-template-columns:1fr 1fr}}
     .roundCard .col{background:#0f1218;border:1px solid #1f2531;border-radius:12px;padding:10px}
-    .roundCard .lbl{font-weight:800;margin:0 0 8px 0}
-    .roundCard .fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .roundCard .lbl{font-weight:800;margin-bottom:8px}
     .roundCard label{display:grid;gap:6px;font-size:13px;color:#cbd6ea}
-    .roundCard input[type="number"]{
-      background:#0b0f16;border:1px solid #1f2531;border-radius:10px;color:#fff;
-      padding:8px 10px;font-size:15px
-    }
-    .totalsBar{
-      display:grid;grid-template-columns:1fr;gap:10px;margin-top:6px
-    }
-    @media(min-width:700px){ .totalsBar{grid-template-columns:1fr 1fr} }
+    .roundCard input{background:#0b0f16;border:1px solid #1f2531;border-radius:10px;color:#fff;padding:8px 10px;font-size:15px}
+    .totalsBar{display:grid;grid-template-columns:1fr;gap:10px;margin-top:6px}
+    @media(min-width:700px){.totalsBar{grid-template-columns:1fr 1fr}}
     .tot{background:#0f1218;border:1px solid #2a3242;border-radius:12px;padding:12px}
     .tot .name{font-weight:900;margin-bottom:6px}
     .tot .nums{display:flex;gap:12px;flex-wrap:wrap;color:#d7e0f2}
-    .btn.small{padding:8px 10px;font-size:13px}
 
     @media (max-width:600px){
       .hero{padding:10px 12px 10px;}
@@ -265,41 +249,160 @@
 <script>
 (() => {
   const SOURCES = { primary:"data/primary.json", terrain:"data/terrain.json", secondary:"data/secondary.json" };
-  
-  // ==== SCORING: state + helpers (new mobile-card version) ====
+
+  // ==== SCORING (single, mobile-first implementation) ====
   const SCORING_KEY = 'ca2025:scoring:v1';
   let scoring = null;
 
   function loadScoring(){
     try{
       const raw = localStorage.getItem(SCORING_KEY);
-      if(raw){
-        scoring = JSON.parse(raw);
-      }else{
-        scoring = {
-          players: { a: 'Player A', b: 'Player B' },
-          rounds: Array.from({length:5}, () => ({ a:{p:0,s:0}, b:{p:0,s:0} }))
-        };
-      }
-    }catch(e){
-      scoring = {
+      scoring = raw ? JSON.parse(raw) : {
         players: { a: 'Player A', b: 'Player B' },
         rounds: Array.from({length:5}, () => ({ a:{p:0,s:0}, b:{p:0,s:0} }))
       };
+    }catch(e){
+      scoring = { players: { a:'Player A', b:'Player B' }, rounds: Array.from({length:5},()=>({a:{p:0,s:0},b:{p:0,s:0}})) };
     }
   }
-  function saveScoring(){ try{ localStorage.setItem(SCORING_KEY, JSON.stringify(scoring)); }catch(e){} }
+  function saveScoring(){ try{ localStorage.setItem(SCORING_KEY, JSON.stringify(scoring)); }catch{} }
   function totals(){
     let aP=0,aS=0,bP=0,bS=0;
-    scoring.rounds.forEach(r=>{
-      aP += Number(r.a.p||0); aS += Number(r.a.s||0);
-      bP += Number(r.b.p||0); bS += Number(r.b.s||0);
-    });
+    scoring.rounds.forEach(r=>{ aP+=+r.a.p||0; aS+=+r.a.s||0; bP+=+r.b.p||0; bS+=+r.b.s||0; });
     return { aPrim:aP, aSec:aS, aTotal:aP+aS, bPrim:bP, bSec:bS, bTotal:bP+bS };
   }
 
-  // ---------- App state ----------
-  let currentTab = "primary";   // default to Primary tab
+  function buildScoreCardsHTML(){
+    const t = totals();
+    const namesHTML = `
+      <div class="scoreNames" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <input id="pAName" class="input" placeholder="Player A" value="${escapeHtml(scoring.players.a)}" />
+        <input id="pBName" class="input" placeholder="Player B" value="${escapeHtml(scoring.players.b)}" />
+      </div>
+    `;
+    const cards = scoring.rounds.map((r, i) => {
+      const rNum = i+1;
+      return `
+        <div class="roundCard">
+          <div class="roundHead">Round ${rNum}</div>
+          <div class="row">
+            <div class="col">
+              <div class="lbl">${escapeHtml(scoring.players.a)}</div>
+              <label>Primary
+                <input type="number" min="0" step="1" data-r="${i}" data-pl="a" data-kind="p" value="${Number(r.a.p)||0}">
+              </label>
+              <label>Secondary
+                <input type="number" min="0" step="1" data-r="${i}" data-pl="a" data-kind="s" value="${Number(r.a.s)||0}">
+              </label>
+            </div>
+            <div class="col">
+              <div class="lbl">${escapeHtml(scoring.players.b)}</div>
+              <label>Primary
+                <input type="number" min="0" step="1" data-r="${i}" data-pl="b" data-kind="p" value="${Number(r.b.p)||0}">
+              </label>
+              <label>Secondary
+                <input type="number" min="0" step="1" data-r="${i}" data-pl="b" data-kind="s" value="${Number(r.b.s)||0}">
+              </label>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    const totalsHTML = `
+      <div class="totalsBar">
+        <div class="tot">
+          <div class="name">${escapeHtml(scoring.players.a)}</div>
+          <div class="nums">
+            <span>P: <strong>${t.aPrim}</strong></span>
+            <span>S: <strong>${t.aSec}</strong></span>
+            <span>Total: <strong>${t.aTotal}</strong></span>
+          </div>
+        </div>
+        <div class="tot">
+          <div class="name">${escapeHtml(scoring.players.b)}</div>
+          <div class="nums">
+            <span>P: <strong>${t.bPrim}</strong></span>
+            <span>S: <strong>${t.bSec}</strong></span>
+            <span>Total: <strong>${t.bTotal}</strong></span>
+          </div>
+        </div>
+      </div>
+    `;
+    const actionsHTML = `
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <button id="resetScores" class="btn danger">Reset</button>
+      </div>
+    `;
+    return `<div class="scoreWrap">${namesHTML}${cards}${totalsHTML}${actionsHTML}</div>`;
+  }
+
+  function renderScoring(){
+    loadScoring();
+    grid.innerHTML = buildScoreCardsHTML();
+
+    // Name handlers
+    const pA = document.getElementById('pAName');
+    const pB = document.getElementById('pBName');
+    pA?.addEventListener('input', () => {
+      scoring.players.a = pA.value.trim() || 'Player A';
+      saveScoring();
+      updateTotalsBar();
+      // Update visible labels
+      grid.querySelectorAll('.roundCard .col .lbl')[0].textContent = scoring.players.a;
+    });
+    pB?.addEventListener('input', () => {
+      scoring.players.b = pB.value.trim() || 'Player B';
+      saveScoring();
+      updateTotalsBar();
+      grid.querySelectorAll('.roundCard .col .lbl')[1].textContent = scoring.players.b;
+    });
+
+    // Score inputs
+    grid.querySelectorAll('input[type="number"][data-r]').forEach(inp=>{
+      inp.addEventListener('input', (e)=>{
+        const el = e.currentTarget;
+        const r = +el.getAttribute('data-r');
+        const pl = el.getAttribute('data-pl'); // 'a' or 'b'
+        const kind = el.getAttribute('data-kind'); // 'p' or 's'
+        const val = Math.max(0, Number(el.value||0));
+        el.value = String(val);
+        scoring.rounds[r][pl][kind] = val;
+        saveScoring();
+        updateTotalsBar();
+      });
+    });
+
+    // Reset
+    document.getElementById('resetScores')?.addEventListener('click', ()=>{
+      if(!confirm('Clear all scores and names?')) return;
+      localStorage.removeItem(SCORING_KEY);
+      renderScoring();
+    });
+
+    updateTotalsBar();
+  }
+
+  function updateTotalsBar(){
+    const t = totals();
+    const totEls = grid.querySelectorAll('.totalsBar .tot');
+    if(totEls[0]){
+      totEls[0].querySelector('.name').textContent = scoring.players.a;
+      const spans = totEls[0].querySelectorAll('.nums span strong');
+      spans[0].textContent = t.aPrim;
+      spans[1].textContent = t.aSec;
+      spans[2].textContent = t.aTotal;
+    }
+    if(totEls[1]){
+      totEls[1].querySelector('.name').textContent = scoring.players.b;
+      const spans = totEls[1].querySelectorAll('.nums span strong');
+      spans[0].textContent = t.bPrim;
+      spans[1].textContent = t.bSec;
+      spans[2].textContent = t.bTotal;
+    }
+  }
+
+  // ==== App tabs, data loading/rendering (unchanged except scoring branch) ====
+  let currentTab = "primary";   // start on Primary
   let items = [];
   const grid = document.getElementById('grid');
   const search = document.getElementById('search');
@@ -312,14 +415,13 @@
   const mdPreview  = document.getElementById('mdPreview');
   const previewBtn = document.getElementById('previewBtn');
 
-  // Image modal bits
+  // Terrain image modal
   const imgModal = document.getElementById('imgModal');
   const imgTitle = document.getElementById('imgTitle');
   const imgFull  = document.getElementById('imgFull');
 
   const keyFor = (tab,title)=>`ca2025:text:${tab}:${title}`;
 
-  // Tabs
   document.querySelectorAll('.tab').forEach(btn=>{
     btn.addEventListener('click', async () => {
       document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
@@ -328,7 +430,10 @@
       search.value = "";
 
       if(currentTab === 'scoring'){
-        renderScoring();
+        try { renderScoring(); } catch(err){
+          console.error('Scoring render failed', err);
+          grid.innerHTML = `<div style="opacity:.8">Scoring failed to render. Check console.</div>`;
+        }
         return;
       }
       await loadAndRender();
@@ -342,18 +447,18 @@
   }
 
   async function loadAndRender(){
-    // scoring tab handled separately
-    if (currentTab === 'scoring') { renderScoring(); return; }
+    if (currentTab === 'scoring'){ renderScoring(); return; }
     try{
       const data = await fetchJson(SOURCES[currentTab]);
       renderFromData(data || {});
     }catch(e){
+      console.error(e);
       grid.innerHTML = `<div style="opacity:.8">Failed to load ${currentTab}.json</div>`;
     }
   }
 
   function renderFromData(data){
-    // TERRAIN uses groups
+    // Terrain groups
     if(currentTab === 'terrain' && Array.isArray(data.groups)){
       const groups = data.groups;
       const allItems = groups.flatMap(g => (g.items||[]));
@@ -370,7 +475,7 @@
         return header + imgs;
       }).join('');
 
-      // Click: open image viewer
+      // Fullscreen image
       grid.querySelectorAll('.card.terrain').forEach(card=>{
         card.addEventListener('click', ()=>{
           imgTitle.textContent = card.dataset.title || 'Layout';
@@ -378,6 +483,7 @@
           imgModal.classList.add('show');
         });
       });
+      document.getElementById('imgClose').onclick = ()=> imgModal.classList.remove('show');
 
       // Terrain search by title
       search.oninput = ()=>{
@@ -390,7 +496,7 @@
       return;
     }
 
-    // DEFAULT (secondary/primary) path
+    // Default text cards (primary/secondary)
     const raw = Array.isArray(data) ? data : (data.items||[]);
     items = raw.slice().sort((a,b)=>a.title.localeCompare(b.title));
     buildJump(items);
@@ -414,10 +520,13 @@
     grid.querySelectorAll('.card').forEach(card=>{
       card.addEventListener('click',()=>openEditor(card.dataset.title));
     });
+
+    // Restore generic search for these tabs
+    search.oninput = ()=>renderTextCards(items);
   }
 
   function buildJump(list){
-    const letters = [...new Set(list.map(x=>x.title[0].toUpperCase()))].sort();
+    const letters = [...new Set(list.map(x=>x.title[0]?.toUpperCase()||'#'))].sort();
     jump.innerHTML = `<option value="">A–Z jump</option>`+
       letters.map(l=>`<option value="${l}">${l}</option>`).join('');
   }
@@ -430,11 +539,10 @@
     });
     if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
   });
-  search.addEventListener('input', ()=>renderTextCards(items)); // overridden for terrain above
 
   // ---- Text modal handlers ----
   function openEditor(title){
-    if(currentTab === 'terrain'){ return; } // no editor for terrain
+    if(currentTab === 'terrain' || currentTab === 'scoring'){ return; }
     modalTitle.textContent = title;
     const saved = localStorage.getItem(keyFor(currentTab,title));
     modalTxt.value = saved || "";
@@ -456,6 +564,7 @@
     renderTextCards(items);
   };
 
+  // Markdown preview
   previewBtn.addEventListener('click', ()=>{
     if(mdPreview.style.display === "none"){
       mdPreview.innerHTML = renderMarkdown(modalTxt.value);
@@ -465,7 +574,7 @@
     }
   });
 
-  // Export
+  // Export text
   document.getElementById('exportBtn').onclick = ()=>{
     try{
       const dump = {};
@@ -495,13 +604,10 @@
     }
   };
 
-  // Image modal close
-  document.getElementById('imgClose').onclick = ()=> imgModal.classList.remove('show');
-
+  // Markdown renderer
   function escapeHtml(s){ return String(s||"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;","»":"&raquo;","<":"&lt;","\"":"&quot;","'":"&#39;"}[c])); }
   function normalize(s){ return String(s||"").replace(/\r\n/g,"\n").replace(/\r/g,"\n"); }
 
-  // Markdown
   function renderMarkdown(src){
     const text = normalize(src);
     const lines = text.split("\n");
@@ -515,6 +621,7 @@
       }
     };
     const flushList = () => { if (inList){ html.push('</ul>'); inList = false; } };
+
     for (let i = 0; i < lines.length; i++){
       const line = lines[i];
       if (/^\s*$/.test(line)){ flushList(); flushPara(); continue; }
@@ -543,158 +650,11 @@
     return s;
   }
 
-  // ==== SCORING: UI (stacked cards, mobile-friendly, no horizontal scroll) ====
-  function buildScoreCardsHTML(){
-    const t = totals();
-
-    const namesHTML = `
-      <div class="scoreNames" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-        <input id="pAName" class="input" placeholder="Player A" value="${escapeHtml(scoring.players.a)}" />
-        <input id="pBName" class="input" placeholder="Player B" value="${escapeHtml(scoring.players.b)}" />
-      </div>
-    `;
-
-    const cards = scoring.rounds.map((r, i) => {
-      const rNum = i+1;
-      return `
-        <div class="roundCard">
-          <div class="roundHead">Round ${rNum}</div>
-          <div class="row">
-            <div class="col">
-              <div class="lbl">${escapeHtml(scoring.players.a)}</div>
-              <div class="fields">
-                <label>Primary
-                  <input type="number" min="0" step="1" data-r="${i}" data-pl="a" data-kind="p" value="${Number(r.a.p)||0}">
-                </label>
-                <label>Secondary
-                  <input type="number" min="0" step="1" data-r="${i}" data-pl="a" data-kind="s" value="${Number(r.a.s)||0}">
-                </label>
-              </div>
-            </div>
-            <div class="col">
-              <div class="lbl">${escapeHtml(scoring.players.b)}</div>
-              <div class="fields">
-                <label>Primary
-                  <input type="number" min="0" step="1" data-r="${i}" data-pl="b" data-kind="p" value="${Number(r.b.p)||0}">
-                </label>
-                <label>Secondary
-                  <input type="number" min="0" step="1" data-r="${i}" data-pl="b" data-kind="s" value="${Number(r.b.s)||0}">
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    const totalsHTML = `
-      <div class="totalsBar">
-        <div class="tot">
-          <div class="name">${escapeHtml(scoring.players.a)}</div>
-          <div class="nums">
-            <span>P: <strong>${t.aPrim}</strong></span>
-            <span>S: <strong>${t.aSec}</strong></span>
-            <span>Total: <strong>${t.aTotal}</strong></span>
-          </div>
-        </div>
-        <div class="tot">
-          <div class="name">${escapeHtml(scoring.players.b)}</div>
-          <div class="nums">
-            <span>P: <strong>${t.bPrim}</strong></span>
-            <span>S: <strong>${t.bSec}</strong></span>
-            <span>Total: <strong>${t.bTotal}</strong></span>
-          </div>
-        </div>
-      </div>
-    `;
-
-    const actionsHTML = `
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
-        <button id="resetScores" class="btn danger">Reset</button>
-      </div>
-    `;
-
-    return `
-      <div class="scoreWrap">
-        ${namesHTML}
-        ${cards}
-        ${totalsHTML}
-        ${actionsHTML}
-      </div>
-    `;
-  }
-
-  function renderScoring(){
-    loadScoring();
-    grid.innerHTML = buildScoreCardsHTML();
-
-    // Names
-    const pA = document.getElementById('pAName');
-    const pB = document.getElementById('pBName');
-    pA?.addEventListener('input', () => {
-      scoring.players.a = pA.value.trim() || 'Player A';
-      saveScoring();
-      updateTotalsBar();
-      document.querySelectorAll('.roundCard .col .lbl')[0].textContent = scoring.players.a;
-    });
-    pB?.addEventListener('input', () => {
-      scoring.players.b = pB.value.trim() || 'Player B';
-      saveScoring();
-      updateTotalsBar();
-      document.querySelectorAll('.roundCard .col .lbl')[1].textContent = scoring.players.b;
-    });
-
-    // Scores
-    grid.querySelectorAll('input[type="number"][data-r]').forEach(inp=>{
-      inp.addEventListener('input', handleScoreInput);
-    });
-
-    // Reset
-    const resetBtn = document.getElementById('resetScores');
-    resetBtn?.addEventListener('click', ()=>{
-      if(!confirm('Clear all scores and names?')) return;
-      localStorage.removeItem(SCORING_KEY);
-      loadScoring();
-      renderScoring();
-    });
-
-    updateTotalsBar();
-  }
-
-  function handleScoreInput(e){
-    const el = e.currentTarget;
-    const r = Number(el.getAttribute('data-r'));
-    const pl = el.getAttribute('data-pl'); // 'a' | 'b'
-    const kind = el.getAttribute('data-kind'); // 'p' | 's'
-    const val = Math.max(0, Number(el.value||0));
-    el.value = String(val);
-    scoring.rounds[r][pl][kind] = val;
-    saveScoring();
-    updateTotalsBar();
-  }
-
-  function updateTotalsBar(){
-    const t = totals();
-    const totEls = grid.querySelectorAll('.totalsBar .tot');
-    if(totEls[0]){
-      totEls[0].querySelector('.name').textContent = scoring.players.a;
-      const spans = totEls[0].querySelectorAll('.nums span strong');
-      spans[0].textContent = t.aPrim;
-      spans[1].textContent = t.aSec;
-      spans[2].textContent = t.aTotal;
-    }
-    if(totEls[1]){
-      totEls[1].querySelector('.name').textContent = scoring.players.b;
-      const spans = totEls[1].querySelectorAll('.nums span strong');
-      spans[0].textContent = t.bPrim;
-      spans[1].textContent = t.bSec;
-      spans[2].textContent = t.bTotal;
-    }
-  }
-
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('service-worker.js').catch(()=>{});
   }
+
+  // Initial load (Primary)
   loadAndRender();
 })();
 </script>
